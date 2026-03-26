@@ -84,6 +84,7 @@ export default function Setup() {
         members.map((m, i) => addMember(group.id, m.name, i + 1, undefined, m.email || undefined))
       );
 
+      await queryClient.invalidateQueries({ queryKey: ["groups"] });
       await queryClient.invalidateQueries({ queryKey: ["group"] });
       await queryClient.invalidateQueries({ queryKey: ["members"] });
 

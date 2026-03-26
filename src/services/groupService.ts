@@ -1,34 +1,44 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Group } from "@/types/group";
 
-export async function getGroup(): Promise<Group | null> {
+export async function getGroups(): Promise<Group[]> {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return [];
 
-  // First try: groups I own
-  const { data: ownGroup } = await supabase
+  // Groups I own
+  const { data: ownGroups } = await supabase
     .from("groups")
     .select("*")
     .eq("user_id", user.id)
-    .maybeSingle();
+    .order("created_at");
 
-  if (ownGroup) return ownGroup;
-
-  // Second try: groups I'm a member of (via accepted invite)
-  const { data: memberOf } = await supabase
+  // Groups I'm a member of
+  const { data: memberGroups } = await supabase
     .from("members")
-    .select("group_id, groups(*)")
+    .select("groups(*)")
     .eq("user_id", user.id)
-    .eq("is_active", true)
-    .limit(1)
+    .eq("is_active", true);
+
+  const fromMembership = (memberGroups ?? [])
+    .map((m) => m.groups as unknown as Group)
+    .filter(Boolean);
+
+  // Merge and deduplicate
+  const all = [...(ownGroups ?? []), ...fromMembership];
+  const unique = Array.from(new Map(all.map((g) => [g.id, g])).values());
+
+  return unique;
+}
+
+export async function getGroup(id: string): Promise<Group | null> {
+  const { data, error } = await supabase
+    .from("groups")
+    .select("*")
+    .eq("id", id)
     .maybeSingle();
 
-  if (memberOf?.groups) {
-    // groups comes as object since it's a single FK relation
-    return memberOf.groups as unknown as Group;
-  }
-
-  return null;
+  if (error) throw error;
+  return data;
 }
 
 export async function createGroup(name: string, defaultCurrency: string): Promise<Group> {
@@ -55,4 +65,9 @@ export async function updateGroup(id: string, updates: Partial<Pick<Group, "name
 
   if (error) throw error;
   return data;
+}
+
+export async function deleteGroup(id: string): Promise<void> {
+  const { error } = await supabase.from("groups").delete().eq("id", id);
+  if (error) throw error;
 }

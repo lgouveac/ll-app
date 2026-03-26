@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { Settings as SettingsIcon, Users, LogOut, Save } from "lucide-react";
+import { Settings as SettingsIcon, Users, LogOut, Save, Mail, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useGroup } from "@/hooks/useGroup";
@@ -122,36 +122,36 @@ export default function Settings() {
           </button>
         </div>
 
-        {/* Members link */}
-        <button
-          onClick={() => navigate("/members")}
-          className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition-colors hover:bg-white/[0.08]"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#7C3AED]/20">
-            <Users className="h-5 w-5 text-[#7C3AED]" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white">
-              Gerenciar membros
-            </p>
-            <p className="text-xs text-white/40">
-              Adicionar, editar ou desativar membros
-            </p>
-          </div>
-          <svg
-            className="h-5 w-5 text-white/30"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        {/* Navigation links */}
+        <div className="space-y-2">
+          <button
+            onClick={() => navigate("/members")}
+            className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition-colors hover:bg-white/[0.08]"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#7C3AED]/20">
+              <Users className="h-5 w-5 text-[#7C3AED]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white">Gerenciar membros</p>
+              <p className="text-xs text-white/40">Adicionar, editar ou desativar</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-white/30" />
+          </button>
+
+          <button
+            onClick={() => navigate("/invitations")}
+            className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition-colors hover:bg-white/[0.08]"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#DC2626]/20">
+              <Mail className="h-5 w-5 text-[#DC2626]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-white">Convites</p>
+              <p className="text-xs text-white/40">Ver convites pendentes</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-white/30" />
+          </button>
+        </div>
 
         {/* Sign out */}
         <div className="pt-4">

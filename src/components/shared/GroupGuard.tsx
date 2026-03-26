@@ -8,7 +8,7 @@ interface GroupGuardProps {
 }
 
 export default function GroupGuard({ children }: GroupGuardProps) {
-  const { group, loading } = useGroup();
+  const { groups, loading } = useGroup();
 
   if (loading) {
     return (
@@ -18,7 +18,7 @@ export default function GroupGuard({ children }: GroupGuardProps) {
     );
   }
 
-  if (!group) {
+  if (groups.length === 0) {
     return <Navigate to="/setup" replace />;
   }
 
