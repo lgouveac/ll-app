@@ -76,8 +76,14 @@ export default function Setup() {
     try {
       const group = await createGroup(groupName.trim(), currency);
 
+      // Get fresh user data to ensure we have the ID
+      const { data: { user: freshUser } } = await (await import("@/integrations/supabase/client")).supabase.auth.getUser();
+      const userId = freshUser?.id ?? user?.id;
+      const userEmail = freshUser?.email ?? user?.email;
+      console.log("[Setup] Creating member with userId:", userId, "email:", userEmail);
+
       // Add myself first (linked to my user account)
-      await addMember(group.id, myName.trim(), 0, user?.id, user?.email ?? undefined);
+      await addMember(group.id, myName.trim(), 0, userId, userEmail ?? undefined);
 
       // Add other members
       await Promise.all(
