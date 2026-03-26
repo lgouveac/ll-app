@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{ user: User | null; session: Session | null }>;
   signIn: (email: string, password: string) => Promise<void>;
+  resendConfirmation: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -52,13 +53,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const resendConfirmation = async (email: string) => {
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, resendConfirmation, signOut }}>
       {children}
     </AuthContext.Provider>
   );

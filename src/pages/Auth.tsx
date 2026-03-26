@@ -3,7 +3,16 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Heart, Loader2, Mail, Lock, ArrowRight, UserPlus } from "lucide-react";
+import {
+  Heart,
+  Loader2,
+  Mail,
+  Lock,
+  ArrowRight,
+  UserPlus,
+  CheckCircle2,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { acceptInvitation } from "@/services/invitationService";
@@ -16,16 +25,21 @@ const authSchema = z.object({
 
 type AuthFormValues = z.infer<typeof authSchema>;
 
+type AuthState = "form" | "check-email";
+
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const inviteId = searchParams.get("invite");
 
-  const [isSignUp, setIsSignUp] = useState(!!inviteId);
+  const [mode, setMode] = useState<"login" | "signup">(inviteId ? "signup" : "login");
+  const [authState, setAuthState] = useState<AuthState>("form");
+  const [pendingEmail, setPendingEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const [isResending, setIsResending] = useState(false);
+  const { signIn, signUp, resendConfirmation, user } = useAuth();
   const navigate = useNavigate();
 
-  // If user is already logged in and has an invite, accept it
+  // If user is already logged in
   useEffect(() => {
     if (user && inviteId) {
       handleAcceptInvite(inviteId);
@@ -58,40 +72,43 @@ export default function Auth() {
   });
 
   const onSubmit = async (data: AuthFormValues) => {
+    console.log("[Auth] Mode:", mode, "| Email:", data.email);
     setIsSubmitting(true);
+
     try {
-      if (isSignUp) {
+      if (mode === "signup") {
+        console.log("[Auth] Calling signUp...");
         const result = await signUp(data.email, data.password);
+        console.log("[Auth] signUp result:", { user: !!result.user, session: !!result.session });
 
         if (result.session) {
-          // Auto-confirmed — user is logged in
           toast.success("Conta criada!");
-          // useEffect handles invite acceptance and navigation
           if (!inviteId) navigate("/", { replace: true });
         } else {
-          // Email confirmation required
-          toast.success(
-            "Conta criada! Verifique seu e-mail para confirmar."
-          );
+          // Email confirmation required — show check-email screen
+          setPendingEmail(data.email);
+          setAuthState("check-email");
         }
       } else {
+        console.log("[Auth] Calling signIn...");
         await signIn(data.email, data.password);
+        console.log("[Auth] signIn success");
         toast.success("Bem-vindo de volta!");
-        // useEffect handles invite acceptance and navigation
         if (!inviteId) navigate("/", { replace: true });
       }
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Erro inesperado";
+      const message = error instanceof Error ? error.message : "Erro inesperado";
+      console.error("[Auth] Error:", message);
 
-      // Better error messages in Portuguese
       if (message.includes("Invalid login credentials")) {
         toast.error("Email ou senha incorretos");
       } else if (message.includes("Email not confirmed")) {
-        toast.error("Confirme seu email antes de entrar. Verifique sua caixa de entrada.");
+        toast.error("Confirme seu email antes de entrar.");
+        setPendingEmail(data.email);
+        setAuthState("check-email");
       } else if (message.includes("User already registered")) {
         toast.error("Este email ja esta cadastrado. Tente entrar.");
-        setIsSignUp(false);
+        setMode("login");
       } else {
         toast.error(message);
       }
@@ -99,6 +116,76 @@ export default function Auth() {
       setIsSubmitting(false);
     }
   };
+
+  const handleResend = async () => {
+    if (!pendingEmail) return;
+    setIsResending(true);
+    try {
+      await resendConfirmation(pendingEmail);
+      toast.success("Email reenviado!");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao reenviar"
+      );
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  // Check-email screen
+  if (authState === "check-email") {
+    return (
+      <div className="relative flex min-h-screen items-center justify-center px-4">
+        <div className="pointer-events-none absolute inset-0 gradient-romantic-subtle" />
+        <div className="relative z-10 w-full max-w-sm text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
+              <CheckCircle2 className="h-10 w-10 text-green-500" />
+            </div>
+          </div>
+          <h1 className="mb-2 text-2xl font-bold text-foreground">
+            Verifique seu email
+          </h1>
+          <p className="mb-2 text-muted-foreground">
+            Enviamos um link de confirmacao para:
+          </p>
+          <p className="mb-6 font-medium text-foreground">{pendingEmail}</p>
+          <p className="mb-8 text-sm text-muted-foreground">
+            Clique no link no email para ativar sua conta. Depois volte aqui e faca login.
+          </p>
+
+          <div className="space-y-3">
+            <button
+              onClick={handleResend}
+              disabled={isResending}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-medium text-foreground transition-colors hover:bg-card disabled:opacity-50"
+            >
+              {isResending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Reenviar email
+            </button>
+
+            <button
+              onClick={() => {
+                setAuthState("form");
+                setMode("login");
+              }}
+              className="gradient-romantic flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-medium text-white"
+            >
+              Ja confirmei, fazer login
+            </button>
+          </div>
+
+          <p className="mt-6 text-xs text-muted-foreground">
+            Nao recebeu? Verifique a pasta de spam.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4">
@@ -123,16 +210,40 @@ export default function Auth() {
           <div className="mb-4 flex items-center gap-3 rounded-xl border border-secondary/30 bg-secondary/10 px-4 py-3">
             <UserPlus className="h-5 w-5 shrink-0 text-secondary" />
             <p className="text-sm text-foreground">
-              Voce recebeu um convite! {isSignUp ? "Crie uma conta" : "Entre"} para aceitar.
+              Voce recebeu um convite! {mode === "signup" ? "Crie uma conta" : "Entre"} para aceitar.
             </p>
           </div>
         )}
 
         {/* Card */}
         <div className="rounded-xl border border-border bg-card p-6 shadow-xl shadow-black/20">
-          <h2 className="mb-6 text-center text-lg font-semibold text-foreground">
-            {isSignUp ? "Criar conta" : "Entrar"}
-          </h2>
+          {/* Tabs */}
+          <div className="mb-6 flex rounded-lg bg-accent p-1">
+            <button
+              type="button"
+              onClick={() => setMode("login")}
+              className={cn(
+                "flex-1 rounded-md py-2.5 text-sm font-medium transition-all",
+                mode === "login"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Entrar
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("signup")}
+              className={cn(
+                "flex-1 rounded-md py-2.5 text-sm font-medium transition-all",
+                mode === "signup"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Criar conta
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
@@ -167,7 +278,7 @@ export default function Auth() {
                 <input
                   id="password"
                   type="password"
-                  autoComplete={isSignUp ? "new-password" : "current-password"}
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
                   placeholder="••••••"
                   className={cn(
                     "h-11 w-full rounded-lg border border-input bg-accent pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground",
@@ -190,24 +301,12 @@ export default function Auth() {
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <>
-                  {isSignUp ? "Criar conta" : "Entrar"}
+                  {mode === "signup" ? "Criar conta" : "Entrar"}
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => setIsSignUp((prev) => !prev)}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {isSignUp
-                ? "Ja tem uma conta? Entrar"
-                : "Nao tem conta? Criar conta"}
-            </button>
-          </div>
         </div>
       </div>
     </div>
