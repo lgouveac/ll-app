@@ -12,6 +12,7 @@ import MemberAvatar from "@/components/members/MemberAvatar";
 
 interface PendingMember {
   name: string;
+  email: string;
   avatar_color: string;
   isMe: boolean;
 }
@@ -21,32 +22,38 @@ export default function Setup() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  const myName = user?.email?.split("@")[0] || "Eu";
-
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [groupName, setGroupName] = useState("");
+  const [myName, setMyName] = useState(user?.email?.split("@")[0] || "");
   const [currency, setCurrency] = useState("BRL");
-  const [members, setMembers] = useState<PendingMember[]>([
-    { name: myName, avatar_color: getAvatarColor(0), isMe: true },
-  ]);
+  const [members, setMembers] = useState<PendingMember[]>([]);
   const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberEmail, setNewMemberEmail] = useState("");
   const [saving, setSaving] = useState(false);
 
   const canProceedStep1 = groupName.trim().length > 0;
-  const canFinish = members.length >= 2;
+  const canProceedStep2 = myName.trim().length > 0;
+  const canFinish = members.length >= 1; // At least 1 other person + you
 
   function handleAddMember() {
     const trimmed = newMemberName.trim();
     if (!trimmed) return;
-    if (members.some((m) => m.name.toLowerCase() === trimmed.toLowerCase())) {
+    const allNames = [myName, ...members.map((m) => m.name)];
+    if (allNames.some((n) => n.toLowerCase() === trimmed.toLowerCase())) {
       toast.error("Ja existe um membro com esse nome");
       return;
     }
     setMembers((prev) => [
       ...prev,
-      { name: trimmed, avatar_color: getAvatarColor(prev.length), isMe: false },
+      {
+        name: trimmed,
+        email: newMemberEmail.trim(),
+        avatar_color: getAvatarColor(prev.length + 1),
+        isMe: false,
+      },
     ]);
     setNewMemberName("");
+    setNewMemberEmail("");
   }
 
   function handleRemoveMember(index: number) {
@@ -56,11 +63,9 @@ export default function Setup() {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (step === 1 && canProceedStep1) {
-        setStep(2);
-      } else if (step === 2) {
-        handleAddMember();
-      }
+      if (step === 1 && canProceedStep1) setStep(2);
+      else if (step === 2 && canProceedStep2) setStep(3);
+      else if (step === 3 && newMemberName.trim()) handleAddMember();
     }
   }
 
@@ -71,11 +76,12 @@ export default function Setup() {
     try {
       const group = await createGroup(groupName.trim(), currency);
 
-      // Create all members, linking the creator's user_id to "me"
+      // Add myself first (linked to my user account)
+      await addMember(group.id, myName.trim(), 0, user?.id, user?.email ?? undefined);
+
+      // Add other members
       await Promise.all(
-        members.map((m, i) =>
-          addMember(group.id, m.name, i, m.isMe ? user?.id : undefined)
-        )
+        members.map((m, i) => addMember(group.id, m.name, i + 1, undefined, m.email || undefined))
       );
 
       await queryClient.invalidateQueries({ queryKey: ["group"] });
@@ -103,31 +109,29 @@ export default function Setup() {
           </div>
           <h1 className="text-2xl font-bold text-white">Vamos comecar!</h1>
           <p className="mt-2 text-sm text-white/60">
-            {step === 1
-              ? "Crie seu grupo para comecar a dividir despesas"
-              : "Adicione os membros do grupo"}
+            {step === 1 && "De um nome ao seu grupo"}
+            {step === 2 && "Como voce se chama?"}
+            {step === 3 && "Adicione as outras pessoas"}
           </p>
 
           {/* Step indicator */}
           <div className="mt-6 flex items-center gap-2">
-            <div
-              className={cn(
-                "h-2 w-8 rounded-full transition-colors",
-                step === 1 ? "bg-[#DC2626]" : "bg-[#DC2626]/40"
-              )}
-            />
-            <div
-              className={cn(
-                "h-2 w-8 rounded-full transition-colors",
-                step === 2 ? "bg-[#7C3AED]" : "bg-[#7C3AED]/40"
-              )}
-            />
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className={cn(
+                  "h-2 w-6 rounded-full transition-colors",
+                  step >= s ? (s <= 1 ? "bg-[#DC2626]" : s === 2 ? "bg-[#9333EA]" : "bg-[#7C3AED]") : "bg-white/20"
+                )}
+              />
+            ))}
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 px-4 pb-8">
+        {/* Step 1: Group name + currency */}
         {step === 1 && (
           <div className="mx-auto max-w-md space-y-6">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
@@ -139,8 +143,8 @@ export default function Setup() {
                 value={groupName}
                 onChange={(e) => setGroupName(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ex: Casa, Viagem, Casal..."
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 outline-none transition-colors focus:border-[#DC2626]/50 focus:ring-1 focus:ring-[#DC2626]/30"
+                placeholder="Ex: Casa, Viagem Europa, Casal..."
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 outline-none transition-colors focus:border-[#DC2626]/50"
                 autoFocus
               />
             </div>
@@ -152,7 +156,7 @@ export default function Setup() {
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition-colors focus:border-[#7C3AED]/50 focus:ring-1 focus:ring-[#7C3AED]/30"
+                className="w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code} className="bg-[#0F0A1A]">
@@ -167,89 +171,147 @@ export default function Setup() {
               disabled={!canProceedStep1}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#7C3AED] px-6 py-3.5 font-semibold text-white transition-opacity disabled:opacity-40"
             >
-              Proximo
-              <ChevronRight className="h-4 w-4" />
+              Proximo <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         )}
 
+        {/* Step 2: Your name */}
         {step === 2 && (
+          <div className="mx-auto max-w-md space-y-6">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+              <label className="mb-2 block text-sm font-medium text-white/70">
+                Seu nome (como aparecera no grupo)
+              </label>
+              <div className="flex items-center gap-3">
+                <MemberAvatar name={myName || "?"} color={getAvatarColor(0)} size="md" />
+                <input
+                  type="text"
+                  value={myName}
+                  onChange={(e) => setMyName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Seu nome"
+                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 outline-none transition-colors focus:border-[#7C3AED]/50"
+                  autoFocus
+                />
+              </div>
+              <p className="mt-2 text-xs text-white/40">
+                Email: {user?.email}
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep(1)}
+                className="rounded-xl border border-white/10 px-5 py-3.5 font-medium text-white/70 hover:bg-white/5"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={() => setStep(3)}
+                disabled={!canProceedStep2}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#7C3AED] px-6 py-3.5 font-semibold text-white transition-opacity disabled:opacity-40"
+              >
+                Proximo <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Add other members */}
+        {step === 3 && (
           <div className="mx-auto max-w-md space-y-6">
             {/* Add member input */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
               <label className="mb-2 block text-sm font-medium text-white/70">
                 Adicionar membro
               </label>
-              <div className="flex gap-2">
+              <div className="space-y-2">
                 <input
                   type="text"
                   value={newMemberName}
                   onChange={(e) => setNewMemberName(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Nome do membro"
-                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 outline-none transition-colors focus:border-[#7C3AED]/50 focus:ring-1 focus:ring-[#7C3AED]/30"
+                  placeholder="Nome"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 outline-none focus:border-[#7C3AED]/50"
                   autoFocus
+                />
+                <input
+                  type="email"
+                  value={newMemberEmail}
+                  onChange={(e) => setNewMemberEmail(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Email (opcional - pra enviar convite)"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#7C3AED]/50"
                 />
                 <button
                   onClick={handleAddMember}
                   disabled={!newMemberName.trim()}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED] text-white transition-opacity disabled:opacity-40"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2.5 text-sm font-medium text-white transition-opacity disabled:opacity-40"
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus className="h-4 w-4" />
+                  Adicionar
                 </button>
               </div>
             </div>
 
-            {/* Members list */}
-            {members.length > 0 && (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                <div className="mb-3 flex items-center gap-2 px-1">
-                  <Users className="h-4 w-4 text-white/50" />
-                  <span className="text-sm font-medium text-white/50">
-                    {members.length} membro{members.length !== 1 ? "s" : ""}
-                  </span>
+            {/* Members list (me + others) */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <div className="mb-3 flex items-center gap-2 px-1">
+                <Users className="h-4 w-4 text-white/50" />
+                <span className="text-sm font-medium text-white/50">
+                  {members.length + 1} membro{members.length > 0 ? "s" : ""}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {/* Me - always first, can't remove */}
+                <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
+                  <MemberAvatar name={myName} color={getAvatarColor(0)} size="sm" />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-white">
+                      {myName} <span className="text-xs text-primary">(voce)</span>
+                    </span>
+                    <p className="text-xs text-white/40">{user?.email}</p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {members.map((member, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5"
-                    >
-                      <MemberAvatar
-                        name={member.name}
-                        color={member.avatar_color}
-                        size="sm"
-                      />
-                      <span className="flex-1 text-sm font-medium text-white">
-                        {member.name}
-                        {member.isMe && (
-                          <span className="ml-2 text-xs text-primary">(voce)</span>
-                        )}
-                      </span>
-                      {!member.isMe && (
-                        <button
-                          onClick={() => handleRemoveMember(index)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 transition-colors hover:bg-red-500/20 hover:text-[#DC2626]"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+
+                {/* Other members */}
+                {members.map((member, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5"
+                  >
+                    <MemberAvatar name={member.name} color={member.avatar_color} size="sm" />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-white">{member.name}</span>
+                      {member.email && (
+                        <p className="text-xs text-white/40">{member.email}</p>
+                      )}
+                      {!member.email && (
+                        <p className="text-xs text-white/30">Sem email (sem convite)</p>
                       )}
                     </div>
-                  ))}
-                </div>
+                    <button
+                      onClick={() => handleRemoveMember(index)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 hover:bg-red-500/20 hover:text-[#DC2626]"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
 
-            {members.length < 2 && (
+            {members.length < 1 && (
               <p className="text-center text-sm text-white/40">
-                Adicione pelo menos mais 1 membro para continuar
+                Adicione pelo menos mais 1 pessoa para continuar
               </p>
             )}
 
             <div className="flex gap-3">
               <button
-                onClick={() => setStep(1)}
-                className="rounded-xl border border-white/10 px-5 py-3.5 font-medium text-white/70 transition-colors hover:bg-white/5"
+                onClick={() => setStep(2)}
+                className="rounded-xl border border-white/10 px-5 py-3.5 font-medium text-white/70 hover:bg-white/5"
               >
                 Voltar
               </button>
@@ -263,7 +325,7 @@ export default function Setup() {
                 ) : (
                   <>
                     <Heart className="h-4 w-4" />
-                    Comecar
+                    Criar grupo
                   </>
                 )}
               </button>
