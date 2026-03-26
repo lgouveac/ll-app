@@ -74,16 +74,24 @@ export default function Setup() {
     setSaving(true);
 
     try {
-      const group = await createGroup(groupName.trim(), currency);
+      // Get fresh user data FIRST to guarantee we have the ID
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: { user: freshUser }, error: userError } = await supabase.auth.getUser();
 
-      // Get fresh user data to ensure we have the ID
-      const { data: { user: freshUser } } = await (await import("@/integrations/supabase/client")).supabase.auth.getUser();
-      const userId = freshUser?.id ?? user?.id;
-      const userEmail = freshUser?.email ?? user?.email;
-      console.log("[Setup] Creating member with userId:", userId, "email:", userEmail);
+      if (!freshUser || userError) {
+        toast.error("Sessao expirada. Faca login novamente.");
+        navigate("/auth", { replace: true });
+        return;
+      }
+
+      console.log("[Setup] User ID:", freshUser.id, "Email:", freshUser.email);
+
+      const group = await createGroup(groupName.trim(), currency);
+      console.log("[Setup] Group created:", group.id);
 
       // Add myself first (linked to my user account)
-      await addMember(group.id, myName.trim(), 0, userId, userEmail ?? undefined);
+      await addMember(group.id, myName.trim(), 0, freshUser.id, freshUser.email ?? undefined);
+      console.log("[Setup] Self member created with user_id:", freshUser.id);
 
       // Add other members
       await Promise.all(
