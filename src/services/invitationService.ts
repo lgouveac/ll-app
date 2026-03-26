@@ -1,7 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Invitation } from "@/types/group";
-
-
+import { sendInviteEmail } from "./emailService";
 
 export async function getMyInvitations(): Promise<Invitation[]> {
   const { data, error } = await supabase
@@ -34,7 +33,11 @@ export async function sendInvitation(
       email: email.toLowerCase().trim(),
       invited_by: user.id,
     })
-    .select()
+    .select(`
+      *,
+      group:groups(id, name),
+      member:members(id, name)
+    `)
     .single();
 
   if (error) {
@@ -44,27 +47,26 @@ export async function sendInvitation(
     throw error;
   }
 
-  // Send email via Edge Function (fire and forget)
-  sendInviteEmail(data.id).catch((err) =>
-    console.warn("Failed to send invite email:", err)
-  );
+  // Send email via Resend (fire and forget)
+  const inviterName = user.email?.split("@")[0] || "Alguem";
+  const groupName = (data.group as unknown as { name: string })?.name || "um grupo";
+  const memberName = (data.member as unknown as { name: string })?.name || "membro";
+
+  sendInviteEmail({
+    to: email.toLowerCase().trim(),
+    inviterName,
+    groupName,
+    memberName,
+    invitationId: data.id,
+  }).catch((err) => console.warn("Failed to send invite email:", err));
 
   return data;
-}
-
-async function sendInviteEmail(invitationId: string): Promise<void> {
-  const { error } = await supabase.functions.invoke("send-invite", {
-    body: { invitation_id: invitationId },
-  });
-
-  if (error) throw error;
 }
 
 export async function acceptInvitation(invitationId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Get the invitation
   const { data: invitation, error: fetchError } = await supabase
     .from("invitations")
     .select("*")
@@ -73,7 +75,6 @@ export async function acceptInvitation(invitationId: string): Promise<void> {
 
   if (fetchError) throw fetchError;
 
-  // Update invitation status
   const { error: updateError } = await supabase
     .from("invitations")
     .update({ status: "accepted", responded_at: new Date().toISOString() })
@@ -81,7 +82,6 @@ export async function acceptInvitation(invitationId: string): Promise<void> {
 
   if (updateError) throw updateError;
 
-  // Link the member to this user account
   const { error: memberError } = await supabase
     .from("members")
     .update({ user_id: user.id, email: user.email })
