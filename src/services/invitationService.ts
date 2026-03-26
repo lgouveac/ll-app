@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Invitation } from "@/types/group";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+
 
 export async function getMyInvitations(): Promise<Invitation[]> {
   const { data, error } = await supabase
@@ -53,22 +53,11 @@ export async function sendInvitation(
 }
 
 async function sendInviteEmail(invitationId: string): Promise<void> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
-
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-invite`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({ invitation_id: invitationId }),
+  const { error } = await supabase.functions.invoke("send-invite", {
+    body: { invitation_id: invitationId },
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as Record<string, string>).error || "Email send failed");
-  }
+  if (error) throw error;
 }
 
 export async function acceptInvitation(invitationId: string): Promise<void> {
