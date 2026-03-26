@@ -61,34 +61,40 @@ export default function Auth() {
     setIsSubmitting(true);
     try {
       if (isSignUp) {
-        await signUp(data.email, data.password);
-        // If there's an invite, try to sign in immediately
-        // (Supabase auto-confirms in dev, or if email confirmation is off)
-        if (inviteId) {
-          try {
-            await signIn(data.email, data.password);
-            // The useEffect above will handle accepting the invite
-          } catch {
-            toast.success(
-              "Conta criada! Verifique seu e-mail para confirmar, depois clique no link do convite novamente."
-            );
-          }
+        const result = await signUp(data.email, data.password);
+
+        if (result.session) {
+          // Auto-confirmed — user is logged in
+          toast.success("Conta criada!");
+          // useEffect handles invite acceptance and navigation
+          if (!inviteId) navigate("/", { replace: true });
         } else {
-          toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+          // Email confirmation required
+          toast.success(
+            "Conta criada! Verifique seu e-mail para confirmar."
+          );
         }
       } else {
         await signIn(data.email, data.password);
-        if (inviteId) {
-          // useEffect will handle it
-        } else {
-          toast.success("Bem-vindo de volta!");
-          navigate("/", { replace: true });
-        }
+        toast.success("Bem-vindo de volta!");
+        // useEffect handles invite acceptance and navigation
+        if (!inviteId) navigate("/", { replace: true });
       }
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Erro inesperado";
-      toast.error(message);
+
+      // Better error messages in Portuguese
+      if (message.includes("Invalid login credentials")) {
+        toast.error("Email ou senha incorretos");
+      } else if (message.includes("Email not confirmed")) {
+        toast.error("Confirme seu email antes de entrar. Verifique sua caixa de entrada.");
+      } else if (message.includes("User already registered")) {
+        toast.error("Este email ja esta cadastrado. Tente entrar.");
+        setIsSignUp(false);
+      } else {
+        toast.error(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
