@@ -76,6 +76,12 @@ export default function AddExpense() {
   // Files state (supports batch)
   const [files, setFiles] = useState<File[] | null>(null);
 
+  // Extracted expenses from AI (multiple)
+  const [extractedExpenses, setExtractedExpenses] = useState<
+    Array<{ description: string; amount: number; currency: string; date: string | null; category: string | null; selected: boolean }>
+  >([]);
+  const [showExtracted, setShowExtracted] = useState(false);
+
   // Currency conversion cache
   const [convertedPreview, setConvertedPreview] = useState<{
     converted: number;
@@ -110,12 +116,13 @@ export default function AddExpense() {
   const watchedCategory = watch("category");
   const watchedPaidBy = watch("paid_by");
 
-  // Set default currency when group loads
+  // Set default currency when group loads (only if user hasn't changed it)
+  const [currencySetByAI, setCurrencySetByAI] = useState(false);
   useEffect(() => {
-    if (group?.default_currency) {
+    if (group?.default_currency && !currencySetByAI) {
       setValue("currency", group.default_currency);
     }
-  }, [group?.default_currency, setValue]);
+  }, [group?.default_currency, setValue, currencySetByAI]);
 
   // Initialize selected members when members load
   useEffect(() => {
@@ -476,34 +483,103 @@ export default function AddExpense() {
             console.log("[AddExpense] Extracted data:", data);
             const opts = { shouldValidate: true, shouldDirty: true, shouldTouch: true };
 
-            // Set currency from receipt (respect what AI detected)
-            if (data.currency) setValue("currency", data.currency, opts);
+            // Set currency from receipt
+            if (data.currency) {
+              setValue("currency", data.currency, opts);
+              setCurrencySetByAI(true);
+            }
             if (data.date) setValue("date", data.date, opts);
 
             if (data.expenses.length === 1) {
-              // Single expense: fill the form directly
+              // Single expense: fill form directly
               const exp = data.expenses[0];
               if (exp.description) setValue("description", exp.description, opts);
               if (exp.amount > 0) setValue("amount", exp.amount, opts);
               if (exp.category) setValue("category", exp.category, opts);
             } else if (data.expenses.length > 1) {
-              // Multiple expenses: total as amount, items as notes
-              const total = data.expenses.reduce((sum, e) => sum + e.amount, 0);
-              const firstCategory = data.expenses[0]?.category;
-              const descriptions = data.expenses.map((e) => e.description).join(", ");
-
-              setValue("description", descriptions.length > 60 ? descriptions.substring(0, 57) + "..." : descriptions, opts);
-              setValue("amount", Math.round(total * 100) / 100, opts);
-              if (firstCategory) setValue("category", firstCategory, opts);
-
-              // List all items in notes
-              const itemNotes = data.expenses
-                .map((e) => `${e.description}: ${e.amount.toFixed(2)}`)
-                .join("\n");
-              setValue("notes", itemNotes, opts);
+              // Multiple expenses: show list for user to pick
+              setExtractedExpenses(
+                data.expenses.map((e) => ({ ...e, selected: true }))
+              );
+              setShowExtracted(true);
             }
           }}
         />
+
+        {/* Extracted expenses list */}
+        {showExtracted && extractedExpenses.length > 0 && (
+          <div className="rounded-xl border border-secondary/30 bg-card p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-foreground">
+                {extractedExpenses.length} gastos detectados
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  // Apply selected expenses
+                  const selected = extractedExpenses.filter((e) => e.selected);
+                  if (selected.length === 0) {
+                    setShowExtracted(false);
+                    return;
+                  }
+                  const opts2 = { shouldValidate: true, shouldDirty: true, shouldTouch: true };
+                  if (selected.length === 1) {
+                    setValue("description", selected[0].description, opts2);
+                    setValue("amount", selected[0].amount, opts2);
+                    if (selected[0].category) setValue("category", selected[0].category, opts2);
+                  } else {
+                    const total = selected.reduce((s, e) => s + e.amount, 0);
+                    setValue("description", selected.map((e) => e.description).join(", ").substring(0, 60), opts2);
+                    setValue("amount", Math.round(total * 100) / 100, opts2);
+                    const itemNotes = selected.map((e) => `${e.description}: ${e.amount.toFixed(2)}`).join("\n");
+                    setValue("notes", itemNotes, opts2);
+                    if (selected[0].category) setValue("category", selected[0].category, opts2);
+                  }
+                  setShowExtracted(false);
+                }}
+                className="text-xs font-medium text-secondary hover:underline"
+              >
+                Aplicar selecionados
+              </button>
+            </div>
+
+            {extractedExpenses.map((exp, idx) => (
+              <label
+                key={idx}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors",
+                  exp.selected ? "border-secondary/50 bg-secondary/5" : "border-border bg-background opacity-60",
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={exp.selected}
+                  onChange={() => {
+                    const updated = [...extractedExpenses];
+                    updated[idx] = { ...updated[idx], selected: !updated[idx].selected };
+                    setExtractedExpenses(updated);
+                  }}
+                  className="h-4 w-4 rounded accent-secondary"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{exp.description}</p>
+                  <p className="text-xs text-muted-foreground">{exp.category}</p>
+                </div>
+                <span className="text-sm font-semibold text-foreground shrink-0">
+                  {exp.amount.toFixed(2)} {exp.currency}
+                </span>
+              </label>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setShowExtracted(false)}
+              className="w-full text-center text-xs text-muted-foreground hover:text-foreground"
+            >
+              Fechar
+            </button>
+          </div>
+        )}
 
         {/* Notes */}
         <div className="space-y-2">
