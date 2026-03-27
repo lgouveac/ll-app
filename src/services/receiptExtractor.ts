@@ -10,7 +10,10 @@ export interface ExtractedReceipt {
 }
 
 export async function extractReceiptData(file: File): Promise<ExtractedReceipt> {
+  if (!OPENAI_API_KEY) throw new Error("OpenAI API key not configured");
+
   const base64 = await fileToBase64(file);
+  console.log("[Receipt] Extracting from:", file.name, "Size:", (file.size / 1024).toFixed(0) + "KB", "Key:", OPENAI_API_KEY ? "set" : "MISSING");
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -67,10 +70,9 @@ Rules:
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(
-      (err as Record<string, Record<string, string>>)?.error?.message ||
-        `OpenAI API error: ${response.status}`
-    );
+    const msg = (err as Record<string, Record<string, string>>)?.error?.message || `OpenAI API error: ${response.status}`;
+    console.error("[Receipt] OpenAI error:", response.status, msg);
+    throw new Error(msg);
   }
 
   const data = await response.json();

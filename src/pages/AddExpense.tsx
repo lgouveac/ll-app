@@ -473,16 +473,18 @@ export default function AddExpense() {
           value={files}
           onChange={setFiles}
           onExtracted={(data: ExtractedReceipt) => {
-            if (data.description) setValue("description", data.description);
-            if (data.amount > 0) setValue("amount", data.amount);
-            if (data.currency) setValue("currency", data.currency);
-            if (data.date) setValue("date", data.date);
-            if (data.category) setValue("category", data.category);
+            console.log("[AddExpense] Extracted data:", data);
+            const opts = { shouldValidate: true, shouldDirty: true, shouldTouch: true };
+            if (data.description) setValue("description", data.description, opts);
+            if (data.amount > 0) setValue("amount", data.amount, opts);
+            if (data.currency) setValue("currency", data.currency, opts);
+            if (data.date) setValue("date", data.date, opts);
+            if (data.category) setValue("category", data.category, opts);
             if (data.items?.length > 0) {
               const itemNotes = data.items
                 .map((i) => `${i.name}: ${i.amount.toFixed(2)}`)
                 .join("\n");
-              setValue("notes", itemNotes);
+              setValue("notes", itemNotes, opts);
             }
           }}
         />
