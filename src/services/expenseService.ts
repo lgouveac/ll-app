@@ -103,6 +103,52 @@ export async function createExpense(
   return getExpense(expenseData.id);
 }
 
+export async function createMultipleExpenses(
+  baseExpense: Omit<CreateExpenseInput, "description" | "amount" | "category">,
+  items: Array<{ description: string; amount: number; category?: string | null }>,
+  _splitType: "equal",
+  memberIds: string[]
+): Promise<Expense[]> {
+  const results: Expense[] = [];
+
+  for (const item of items) {
+    const expense: CreateExpenseInput = {
+      ...baseExpense,
+      description: item.description,
+      amount: item.amount,
+      category: item.category || null,
+    };
+
+    const { data: expenseData, error: expenseError } = await supabase
+      .from("expenses")
+      .insert(expense)
+      .select()
+      .single();
+
+    if (expenseError) throw expenseError;
+
+    // Equal split among all members
+    const share = Math.round((item.amount / memberIds.length) * 100) / 100;
+    const pct = Math.round((100 / memberIds.length) * 100) / 100;
+    const splits = memberIds.map((mid) => ({
+      expense_id: expenseData.id,
+      member_id: mid,
+      amount: share,
+      percentage: pct,
+    }));
+
+    const { error: splitsError } = await supabase
+      .from("expense_splits")
+      .insert(splits);
+
+    if (splitsError) throw splitsError;
+
+    results.push(await getExpense(expenseData.id));
+  }
+
+  return results;
+}
+
 export async function updateExpense(
   id: string,
   expense: Partial<CreateExpenseInput>,

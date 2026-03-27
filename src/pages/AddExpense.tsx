@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useGroup } from "@/hooks/useGroup";
 import {
   createExpense,
+  createMultipleExpenses,
   updateExpense,
   getExpense,
   uploadPhoto,
@@ -81,6 +82,7 @@ export default function AddExpense() {
     Array<{ description: string; amount: number; currency: string; date: string | null; category: string | null; selected: boolean }>
   >([]);
   const [showExtracted, setShowExtracted] = useState(false);
+  const [savingMultiple, setSavingMultiple] = useState(false);
 
   // Currency conversion cache
   const [convertedPreview, setConvertedPreview] = useState<{
@@ -116,13 +118,14 @@ export default function AddExpense() {
   const watchedCategory = watch("category");
   const watchedPaidBy = watch("paid_by");
 
-  // Set default currency when group loads (only if user hasn't changed it)
-  const [currencySetByAI, setCurrencySetByAI] = useState(false);
+  // Set default currency when group loads (only once on mount, not after AI sets it)
+  const [currencyInitialized, setCurrencyInitialized] = useState(false);
   useEffect(() => {
-    if (group?.default_currency && !currencySetByAI) {
+    if (group?.default_currency && !currencyInitialized && !isEdit) {
       setValue("currency", group.default_currency);
+      setCurrencyInitialized(true);
     }
-  }, [group?.default_currency, setValue, currencySetByAI]);
+  }, [group?.default_currency, setValue, currencyInitialized, isEdit]);
 
   // Initialize selected members when members load
   useEffect(() => {
@@ -486,7 +489,6 @@ export default function AddExpense() {
             // Set currency from receipt
             if (data.currency) {
               setValue("currency", data.currency, opts);
-              setCurrencySetByAI(true);
             }
             if (data.date) setValue("date", data.date, opts);
 
@@ -510,37 +512,14 @@ export default function AddExpense() {
         {showExtracted && extractedExpenses.length > 0 && (
           <div className="rounded-xl border border-secondary/30 bg-card p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-foreground">
-                {extractedExpenses.length} gastos detectados
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  // Apply selected expenses
-                  const selected = extractedExpenses.filter((e) => e.selected);
-                  if (selected.length === 0) {
-                    setShowExtracted(false);
-                    return;
-                  }
-                  const opts2 = { shouldValidate: true, shouldDirty: true, shouldTouch: true };
-                  if (selected.length === 1) {
-                    setValue("description", selected[0].description, opts2);
-                    setValue("amount", selected[0].amount, opts2);
-                    if (selected[0].category) setValue("category", selected[0].category, opts2);
-                  } else {
-                    const total = selected.reduce((s, e) => s + e.amount, 0);
-                    setValue("description", selected.map((e) => e.description).join(", ").substring(0, 60), opts2);
-                    setValue("amount", Math.round(total * 100) / 100, opts2);
-                    const itemNotes = selected.map((e) => `${e.description}: ${e.amount.toFixed(2)}`).join("\n");
-                    setValue("notes", itemNotes, opts2);
-                    if (selected[0].category) setValue("category", selected[0].category, opts2);
-                  }
-                  setShowExtracted(false);
-                }}
-                className="text-xs font-medium text-secondary hover:underline"
-              >
-                Aplicar selecionados
-              </button>
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {extractedExpenses.filter((e) => e.selected).length} de {extractedExpenses.length} gastos selecionados
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Total: {extractedExpenses.filter((e) => e.selected).reduce((s, e) => s + e.amount, 0).toFixed(2)} {extractedExpenses[0]?.currency}
+                </p>
+              </div>
             </div>
 
             {extractedExpenses.map((exp, idx) => (
@@ -573,10 +552,79 @@ export default function AddExpense() {
 
             <button
               type="button"
+              disabled={savingMultiple || !watchedPaidBy || selectedMembers.length === 0}
+              onClick={async () => {
+                const selected = extractedExpenses.filter((e) => e.selected);
+                if (selected.length === 0) {
+                  toast.error("Selecione ao menos um gasto");
+                  return;
+                }
+                if (!watchedPaidBy) {
+                  toast.error("Selecione quem pagou");
+                  return;
+                }
+                if (selectedMembers.length === 0) {
+                  toast.error("Selecione os participantes da divisao");
+                  return;
+                }
+                if (!group) return;
+
+                setSavingMultiple(true);
+                try {
+                  const currency = watchedCurrency || selected[0].currency;
+                  const date = (watch("date") as string) || format(new Date(), "yyyy-MM-dd");
+
+                  await createMultipleExpenses(
+                    {
+                      group_id: group.id,
+                      currency,
+                      converted_amount: null,
+                      base_currency: null,
+                      exchange_rate: null,
+                      paid_by: watchedPaidBy,
+                      date,
+                      photo_url: null,
+                      notes: null,
+                    },
+                    selected.map((e) => ({
+                      description: e.description,
+                      amount: e.amount,
+                      category: e.category,
+                    })),
+                    "equal",
+                    selectedMembers
+                  );
+
+                  toast.success(`${selected.length} despesas criadas!`);
+                  navigate("/");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+                } finally {
+                  setSavingMultiple(false);
+                }
+              }}
+              className={cn(
+                "w-full rounded-xl py-3 text-sm font-semibold text-white",
+                "bg-gradient-to-r from-primary to-[#7C3AED]",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+              )}
+            >
+              {savingMultiple ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Salvando...
+                </span>
+              ) : (
+                `Salvar ${extractedExpenses.filter((e) => e.selected).length} despesas separadas`
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={() => setShowExtracted(false)}
               className="w-full text-center text-xs text-muted-foreground hover:text-foreground"
             >
-              Fechar
+              Cancelar
             </button>
           </div>
         )}
