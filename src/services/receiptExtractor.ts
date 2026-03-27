@@ -44,7 +44,9 @@ Rules:
 - category: one of: food, transport, home, entertainment, health, shopping, travel, other
 - items: individual line items if visible, empty array if not
 - description: concise, in the original language of the receipt
-- If the image is not a receipt/expense, still try to describe what expense it might represent`,
+- If the image is not a receipt/expense, still try to describe what expense it might represent
+- IMPORTANT: Always try your best to extract data. Even if the image is blurry or partial, give your best estimate for amount, currency, and description. Never return amount as 0 unless you truly cannot see any number at all.
+- Look carefully at every number, text, and symbol in the image`,
         },
         {
           role: "user",
@@ -57,13 +59,13 @@ Rules:
               type: "image_url",
               image_url: {
                 url: base64,
-                detail: "low",
+                detail: "high",
               },
             },
           ],
         },
       ],
-      max_tokens: 500,
+      max_tokens: 1000,
       temperature: 0,
     }),
   });
