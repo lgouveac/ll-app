@@ -475,14 +475,30 @@ export default function AddExpense() {
           onExtracted={(data: ExtractedReceipt) => {
             console.log("[AddExpense] Extracted data:", data);
             const opts = { shouldValidate: true, shouldDirty: true, shouldTouch: true };
-            if (data.description) setValue("description", data.description, opts);
-            if (data.amount > 0) setValue("amount", data.amount, opts);
+
+            // Set currency from receipt (respect what AI detected)
             if (data.currency) setValue("currency", data.currency, opts);
             if (data.date) setValue("date", data.date, opts);
-            if (data.category) setValue("category", data.category, opts);
-            if (data.items?.length > 0) {
-              const itemNotes = data.items
-                .map((i) => `${i.name}: ${i.amount.toFixed(2)}`)
+
+            if (data.expenses.length === 1) {
+              // Single expense: fill the form directly
+              const exp = data.expenses[0];
+              if (exp.description) setValue("description", exp.description, opts);
+              if (exp.amount > 0) setValue("amount", exp.amount, opts);
+              if (exp.category) setValue("category", exp.category, opts);
+            } else if (data.expenses.length > 1) {
+              // Multiple expenses: total as amount, items as notes
+              const total = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+              const firstCategory = data.expenses[0]?.category;
+              const descriptions = data.expenses.map((e) => e.description).join(", ");
+
+              setValue("description", descriptions.length > 60 ? descriptions.substring(0, 57) + "..." : descriptions, opts);
+              setValue("amount", Math.round(total * 100) / 100, opts);
+              if (firstCategory) setValue("category", firstCategory, opts);
+
+              // List all items in notes
+              const itemNotes = data.expenses
+                .map((e) => `${e.description}: ${e.amount.toFixed(2)}`)
                 .join("\n");
               setValue("notes", itemNotes, opts);
             }
