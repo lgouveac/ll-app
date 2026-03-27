@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_KEY}` },
     body: JSON.stringify({
-      from: "L&L <onboarding@resend.dev>",
+      from: "L&L <noreply@flowcode.cc>",
       to: [to],
       subject: `${inviterName || "Alguem"} te convidou para "${groupName || "um grupo"}" no L&L`,
       html: `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
