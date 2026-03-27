@@ -85,7 +85,6 @@ export default function PhotoCapture({ value, onChange, onExtracted }: PhotoCapt
         type="file"
         accept="*/*"
         multiple
-        capture="environment"
         onChange={handleChange}
         className="hidden"
       />
