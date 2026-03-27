@@ -600,13 +600,24 @@ export default function AddExpense() {
 
                 setSavingMultiple(true);
                 try {
+                  // Convert if currency differs from group default
+                  let exchangeRate: number | null = null;
+                  let baseCurrency: string | null = null;
+                  const needsConversion = extractedCurrency !== defaultCurrency;
+
+                  if (needsConversion) {
+                    const convResult = await convertAmount(1, extractedCurrency, defaultCurrency);
+                    exchangeRate = convResult.rate;
+                    baseCurrency = defaultCurrency;
+                  }
+
                   await createMultipleExpenses(
                     {
                       group_id: group.id,
                       currency: extractedCurrency,
-                      converted_amount: null,
-                      base_currency: null,
-                      exchange_rate: null,
+                      converted_amount: null, // set per-item below
+                      base_currency: baseCurrency,
+                      exchange_rate: exchangeRate,
                       paid_by: watchedPaidBy,
                       date: extractedDate || format(new Date(), "yyyy-MM-dd"),
                       photo_url: null,
@@ -616,12 +627,17 @@ export default function AddExpense() {
                       description: e.description,
                       amount: e.amount,
                       category: e.category,
+                      converted_amount: needsConversion && exchangeRate
+                        ? Math.round(e.amount * exchangeRate * 100) / 100
+                        : null,
                     })),
                     "equal",
                     selectedMembers
                   );
 
                   toast.success(`${selected.length} despesas criadas!`);
+                  setShowExtracted(false);
+                  setExtractedExpenses([]);
                   navigate("/");
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : "Erro ao salvar");

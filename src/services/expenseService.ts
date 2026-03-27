@@ -105,7 +105,7 @@ export async function createExpense(
 
 export async function createMultipleExpenses(
   baseExpense: Omit<CreateExpenseInput, "description" | "amount" | "category">,
-  items: Array<{ description: string; amount: number; category?: string | null }>,
+  items: Array<{ description: string; amount: number; category?: string | null; converted_amount?: number | null }>,
   _splitType: "equal",
   memberIds: string[]
 ): Promise<Expense[]> {
@@ -117,6 +117,7 @@ export async function createMultipleExpenses(
       description: item.description,
       amount: item.amount,
       category: item.category || null,
+      converted_amount: item.converted_amount ?? baseExpense.converted_amount ?? null,
     };
 
     const { data: expenseData, error: expenseError } = await supabase
@@ -127,8 +128,9 @@ export async function createMultipleExpenses(
 
     if (expenseError) throw expenseError;
 
-    // Equal split among all members
-    const share = Math.round((item.amount / memberIds.length) * 100) / 100;
+    // Use converted amount for splits if available, otherwise original amount
+    const splitAmount = item.converted_amount ?? item.amount;
+    const share = Math.round((splitAmount / memberIds.length) * 100) / 100;
     const pct = Math.round((100 / memberIds.length) * 100) / 100;
     const splits = memberIds.map((mid) => ({
       expense_id: expenseData.id,
