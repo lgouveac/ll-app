@@ -1,17 +1,28 @@
 import { Link, useLocation } from "react-router-dom";
 import { Home, PlusCircle, Receipt, Settings2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { to: "/", icon: Home, label: "Home", isCenter: false },
-  { to: "/members", icon: Users, label: "Grupo", isCenter: false },
-  { to: "/add", icon: PlusCircle, label: "Add", isCenter: true },
-  { to: "/expenses", icon: Receipt, label: "Historico", isCenter: false },
-  { to: "/settings", icon: Settings2, label: "Config", isCenter: false },
-];
+import { useGroup } from "@/hooks/useGroup";
 
 export function BottomNav() {
   const { pathname } = useLocation();
+  const { group } = useGroup();
+
+  // If inside a group context, show group-specific nav
+  const inGroup = pathname.startsWith("/group/") || pathname.startsWith("/add") || pathname.startsWith("/edit/") || pathname.startsWith("/expenses") || pathname.startsWith("/members");
+
+  const navItems = inGroup && group
+    ? [
+        { to: `/group/${group.id}`, icon: Home, label: "Grupo", isCenter: false },
+        { to: "/members", icon: Users, label: "Membros", isCenter: false },
+        { to: "/add", icon: PlusCircle, label: "Add", isCenter: true },
+        { to: "/expenses", icon: Receipt, label: "Historico", isCenter: false },
+        { to: "/settings", icon: Settings2, label: "Config", isCenter: false },
+      ]
+    : [
+        { to: "/", icon: Home, label: "Home", isCenter: false },
+        { to: "/invitations", icon: Users, label: "Convites", isCenter: false },
+        { to: "/settings", icon: Settings2, label: "Config", isCenter: false },
+      ];
 
   return (
     <nav
@@ -23,7 +34,7 @@ export function BottomNav() {
     >
       <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-4">
         {navItems.map(({ to, icon: Icon, label, isCenter }) => {
-          const isActive = pathname === to || (to !== "/" && pathname.startsWith(to));
+          const isActive = to === "/" ? pathname === "/" : pathname.startsWith(to);
 
           if (isCenter) {
             return (
@@ -47,16 +58,12 @@ export function BottomNav() {
               to={to}
               className={cn(
                 "flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 transition-colors",
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground",
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
               )}
               aria-label={label}
             >
               <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
-              <span className="text-[10px] font-medium leading-none">
-                {label}
-              </span>
+              <span className="text-[10px] font-medium leading-none">{label}</span>
             </Link>
           );
         })}

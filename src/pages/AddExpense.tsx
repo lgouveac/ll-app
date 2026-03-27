@@ -73,8 +73,8 @@ export default function AddExpense() {
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [customAmounts, setCustomAmounts] = useState<Record<string, number>>({});
 
-  // Photo state
-  const [photo, setPhoto] = useState<File | string | null>(null);
+  // Files state (supports batch)
+  const [files, setFiles] = useState<File[] | null>(null);
 
   // Currency conversion cache
   const [convertedPreview, setConvertedPreview] = useState<{
@@ -152,9 +152,7 @@ export default function AddExpense() {
       notes: existingExpense.notes ?? "",
     });
 
-    if (existingExpense.photo_url) {
-      setPhoto(existingExpense.photo_url);
-    }
+    // Existing photos are URLs — not editable as File[] for now
 
     if (existingExpense.splits && existingExpense.splits.length > 0) {
       const splitIds = existingExpense.splits.map((s) => s.member_id);
@@ -258,14 +256,14 @@ export default function AddExpense() {
             }))
           : splits;
 
-      // Upload photo if it's a File
+      // Upload first image file as photo
       let photoUrl: string | null = null;
-      if (photo instanceof File) {
-        // For new expenses we need a temp id; for edits we have the id
-        const tempId = id ?? crypto.randomUUID();
-        photoUrl = await uploadPhoto(group.id, tempId, photo);
-      } else if (typeof photo === "string") {
-        photoUrl = photo;
+      if (files && files.length > 0) {
+        const firstImage = files.find((f) => f.type.startsWith("image/"));
+        if (firstImage) {
+          const tempId = id ?? crypto.randomUUID();
+          photoUrl = await uploadPhoto(group.id, tempId, firstImage);
+        }
       }
 
       const expensePayload = {
@@ -472,8 +470,8 @@ export default function AddExpense() {
 
         {/* Photo */}
         <PhotoCapture
-          value={photo}
-          onChange={setPhoto}
+          value={files}
+          onChange={setFiles}
           onExtracted={(data: ExtractedReceipt) => {
             if (data.description) setValue("description", data.description);
             if (data.amount > 0) setValue("amount", data.amount);

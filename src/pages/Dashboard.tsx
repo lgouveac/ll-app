@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useGroup } from "@/hooks/useGroup";
 import { getRecentExpenses } from "@/services/expenseService";
@@ -20,7 +21,15 @@ function SkeletonCard({ className }: { className?: string }) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { group, members, loading: groupLoading } = useGroup();
+  const { id: groupIdParam } = useParams<{ id: string }>();
+  const { group, members, loading: groupLoading, setActiveGroup } = useGroup();
+
+  // Sync URL param with active group
+  useEffect(() => {
+    if (groupIdParam && groupIdParam !== group?.id) {
+      setActiveGroup(groupIdParam);
+    }
+  }, [groupIdParam, group?.id, setActiveGroup]);
 
   const {
     data: expenses = [],
