@@ -282,6 +282,31 @@ export default function ExpenseDetail() {
           </div>
         </div>
       )}
+
+      {/* Actions */}
+      <div className="mt-6 px-4 pb-8 space-y-3">
+        <button
+          type="button"
+          onClick={() => navigate(`/edit/${expense.id}`)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-sm font-medium text-foreground transition-colors hover:bg-card"
+        >
+          <Edit2 className="h-4 w-4" />
+          Editar despesa
+        </button>
+        <button
+          type="button"
+          onClick={handleDelete}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-colors",
+            confirmDelete
+              ? "bg-destructive text-destructive-foreground"
+              : "border border-destructive/30 text-destructive hover:bg-destructive/10",
+          )}
+        >
+          <Trash2 className="h-4 w-4" />
+          {confirmDelete ? "Toque novamente para confirmar" : "Excluir despesa"}
+        </button>
+      </div>
     </div>
   );
 }

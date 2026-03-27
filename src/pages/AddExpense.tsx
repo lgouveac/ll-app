@@ -29,7 +29,7 @@ import {
 } from "@/services/expenseService";
 import { convertAmount } from "@/services/currencyService";
 import type { SplitType } from "@/types/expense";
-import { CATEGORIES } from "@/types/expense";
+import { CATEGORIES, CURRENCIES } from "@/types/expense";
 import type { ExtractedReceipt } from "@/services/receiptExtractor";
 
 import PayerSelector from "@/components/expense/PayerSelector";
@@ -83,6 +83,8 @@ export default function AddExpense() {
   >([]);
   const [showExtracted, setShowExtracted] = useState(false);
   const [savingMultiple, setSavingMultiple] = useState(false);
+  const [extractedCurrency, setExtractedCurrency] = useState("");
+  const [extractedDate, setExtractedDate] = useState("");
 
   // Currency conversion cache
   const [convertedPreview, setConvertedPreview] = useState<{
@@ -118,14 +120,7 @@ export default function AddExpense() {
   const watchedCategory = watch("category");
   const watchedPaidBy = watch("paid_by");
 
-  // Set default currency when group loads (only once on mount, not after AI sets it)
-  const [currencyInitialized, setCurrencyInitialized] = useState(false);
-  useEffect(() => {
-    if (group?.default_currency && !currencyInitialized && !isEdit) {
-      setValue("currency", group.default_currency);
-      setCurrencyInitialized(true);
-    }
-  }, [group?.default_currency, setValue, currencyInitialized, isEdit]);
+  // Currency is set via defaultValues (defaultCurrency from group) and NOT overwritten by useEffect
 
   // Initialize selected members when members load
   useEffect(() => {
@@ -500,6 +495,8 @@ export default function AddExpense() {
               if (exp.category) setValue("category", exp.category, opts);
             } else if (data.expenses.length > 1) {
               // Multiple expenses: show list for user to pick
+              setExtractedCurrency(data.currency || "USD");
+              setExtractedDate(data.date || format(new Date(), "yyyy-MM-dd"));
               setExtractedExpenses(
                 data.expenses.map((e) => ({ ...e, selected: true }))
               );
@@ -510,46 +507,78 @@ export default function AddExpense() {
 
         {/* Extracted expenses list */}
         {showExtracted && extractedExpenses.length > 0 && (
-          <div className="rounded-xl border border-secondary/30 bg-card p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  {extractedExpenses.filter((e) => e.selected).length} de {extractedExpenses.length} gastos selecionados
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Total: {extractedExpenses.filter((e) => e.selected).reduce((s, e) => s + e.amount, 0).toFixed(2)} {extractedExpenses[0]?.currency}
-                </p>
+          <div className="rounded-xl border border-secondary/30 bg-card p-4 space-y-4">
+            <p className="text-sm font-semibold text-foreground">
+              {extractedExpenses.length} gastos detectados
+            </p>
+
+            {/* Editable currency + date */}
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-xs font-medium text-muted-foreground">Moeda</label>
+                <select
+                  value={extractedCurrency}
+                  onChange={(e) => setExtractedCurrency(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-secondary"
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>{c.code} - {c.symbol}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <input
+                  type="date"
+                  value={extractedDate}
+                  onChange={(e) => setExtractedDate(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-secondary"
+                />
               </div>
             </div>
 
-            {extractedExpenses.map((exp, idx) => (
-              <label
-                key={idx}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors",
-                  exp.selected ? "border-secondary/50 bg-secondary/5" : "border-border bg-background opacity-60",
-                )}
-              >
-                <input
-                  type="checkbox"
-                  checked={exp.selected}
-                  onChange={() => {
-                    const updated = [...extractedExpenses];
-                    updated[idx] = { ...updated[idx], selected: !updated[idx].selected };
-                    setExtractedExpenses(updated);
-                  }}
-                  className="h-4 w-4 rounded accent-secondary"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{exp.description}</p>
-                  <p className="text-xs text-muted-foreground">{exp.category}</p>
-                </div>
-                <span className="text-sm font-semibold text-foreground shrink-0">
-                  {exp.amount.toFixed(2)} {exp.currency}
-                </span>
-              </label>
-            ))}
+            {/* Items list */}
+            <div className="space-y-2">
+              {extractedExpenses.map((exp, idx) => (
+                <label
+                  key={idx}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors",
+                    exp.selected ? "border-secondary/50 bg-secondary/5" : "border-border bg-background opacity-60",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={exp.selected}
+                    onChange={() => {
+                      const updated = [...extractedExpenses];
+                      updated[idx] = { ...updated[idx], selected: !updated[idx].selected };
+                      setExtractedExpenses(updated);
+                    }}
+                    className="h-4 w-4 shrink-0 rounded accent-secondary"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{exp.description}</p>
+                    <p className="text-xs text-muted-foreground">{exp.category}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-foreground shrink-0">
+                    {exp.amount.toFixed(2)}
+                  </span>
+                </label>
+              ))}
+            </div>
 
+            {/* Total */}
+            <div className="flex items-center justify-between border-t border-border pt-3">
+              <span className="text-sm text-muted-foreground">
+                {extractedExpenses.filter((e) => e.selected).length} selecionados
+              </span>
+              <span className="text-sm font-bold text-foreground">
+                Total: {extractedExpenses.filter((e) => e.selected).reduce((s, e) => s + e.amount, 0).toFixed(2)} {extractedCurrency}
+              </span>
+            </div>
+
+            {/* Save button */}
             <button
               type="button"
               disabled={savingMultiple || !watchedPaidBy || selectedMembers.length === 0}
@@ -560,29 +589,26 @@ export default function AddExpense() {
                   return;
                 }
                 if (!watchedPaidBy) {
-                  toast.error("Selecione quem pagou");
+                  toast.error("Selecione quem pagou primeiro");
                   return;
                 }
                 if (selectedMembers.length === 0) {
-                  toast.error("Selecione os participantes da divisao");
+                  toast.error("Selecione os participantes da divisao primeiro");
                   return;
                 }
                 if (!group) return;
 
                 setSavingMultiple(true);
                 try {
-                  const currency = watchedCurrency || selected[0].currency;
-                  const date = (watch("date") as string) || format(new Date(), "yyyy-MM-dd");
-
                   await createMultipleExpenses(
                     {
                       group_id: group.id,
-                      currency,
+                      currency: extractedCurrency,
                       converted_amount: null,
                       base_currency: null,
                       exchange_rate: null,
                       paid_by: watchedPaidBy,
-                      date,
+                      date: extractedDate || format(new Date(), "yyyy-MM-dd"),
                       photo_url: null,
                       notes: null,
                     },
