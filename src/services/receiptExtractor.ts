@@ -22,7 +22,7 @@ export async function extractReceiptData(file: File): Promise<ExtractedReceipt> 
       Authorization: `Bearer ${OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
