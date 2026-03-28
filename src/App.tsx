@@ -13,6 +13,7 @@ import ExpenseDetail from "@/pages/ExpenseDetail";
 import Members from "@/pages/Members";
 import Invitations from "@/pages/Invitations";
 import Settings from "@/pages/Settings";
+import AccountSettings from "@/pages/AccountSettings";
 import NotFound from "@/pages/NotFound";
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
                   <Route path="/expenses/:id" element={<ExpenseDetail />} />
                   <Route path="/members" element={<Members />} />
                   <Route path="/invitations" element={<Invitations />} />
+                  <Route path="/account" element={<AccountSettings />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

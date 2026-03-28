@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, PlusCircle, Receipt, Settings2, Users } from "lucide-react";
+import { Home, PlusCircle, Receipt, Settings2, Users, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGroup } from "@/hooks/useGroup";
 
@@ -8,7 +8,7 @@ export function BottomNav() {
   const { group } = useGroup();
 
   // If inside a group context, show group-specific nav
-  const inGroup = pathname.startsWith("/group/") || pathname.startsWith("/add") || pathname.startsWith("/edit/") || pathname.startsWith("/expenses") || pathname.startsWith("/members");
+  const inGroup = pathname.startsWith("/group/") || pathname.startsWith("/add") || pathname.startsWith("/edit/") || pathname.startsWith("/expenses") || pathname.startsWith("/members") || pathname.startsWith("/settings");
 
   const navItems = inGroup && group
     ? [
@@ -21,7 +21,7 @@ export function BottomNav() {
     : [
         { to: "/", icon: Home, label: "Home", isCenter: false },
         { to: "/invitations", icon: Users, label: "Convites", isCenter: false },
-        { to: "/settings", icon: Settings2, label: "Config", isCenter: false },
+        { to: "/account", icon: User, label: "Conta", isCenter: false },
       ];
 
   return (
