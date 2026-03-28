@@ -1,76 +1,96 @@
 import { supabase } from "@/integrations/supabase/client";
 
-interface RatesResponse {
-  result: string;
-  base_code: string;
+interface FrankfurterResponse {
+  amount: number;
+  base: string;
+  date: string;
   rates: Record<string, number>;
 }
 
-export async function fetchExchangeRates(baseCurrency: string): Promise<Record<string, number>> {
-  const today = new Date().toISOString().split("T")[0];
-
+/**
+ * Fetch exchange rate for a specific date using frankfurter.app (supports historical rates)
+ */
+async function fetchRateForDate(
+  from: string,
+  to: string,
+  date: string
+): Promise<number> {
   // Check cache first
   const { data: cached } = await supabase
     .from("exchange_rates")
-    .select("target_currency, rate")
-    .eq("base_currency", baseCurrency)
-    .eq("fetched_at", today);
+    .select("rate")
+    .eq("base_currency", from)
+    .eq("target_currency", to)
+    .eq("fetched_at", date)
+    .maybeSingle();
 
-  if (cached && cached.length > 0) {
-    const rates: Record<string, number> = {};
-    for (const row of cached) {
-      rates[row.target_currency] = Number(row.rate);
-    }
-    return rates;
-  }
+  if (cached) return Number(cached.rate);
 
-  // Fetch from API
+  // Fetch from frankfurter.app (supports historical dates)
   const response = await fetch(
-    `https://open.er-api.com/v6/latest/${baseCurrency}`
+    `https://api.frankfurter.app/${date}?from=${from}&to=${to}`
   );
 
-  if (!response.ok) throw new Error("Failed to fetch exchange rates");
-
-  const json: RatesResponse = await response.json();
-  if (json.result !== "success") throw new Error("Exchange rate API error");
-
-  // Cache the rates
-  const rows = Object.entries(json.rates).map(([target, rate]) => ({
-    base_currency: baseCurrency,
-    target_currency: target,
-    rate,
-    fetched_at: today,
-  }));
-
-  // Upsert in chunks to avoid hitting limits
-  const chunkSize = 50;
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    await supabase
-      .from("exchange_rates")
-      .upsert(rows.slice(i, i + chunkSize), {
-        onConflict: "base_currency,target_currency,fetched_at",
-      });
+  if (!response.ok) {
+    // Fallback: try today's rate
+    const fallback = await fetch(
+      `https://api.frankfurter.app/latest?from=${from}&to=${to}`
+    );
+    if (!fallback.ok) throw new Error(`Failed to fetch rate for ${from} -> ${to}`);
+    const fallbackJson: FrankfurterResponse = await fallback.json();
+    const fallbackRate = fallbackJson.rates[to];
+    if (!fallbackRate) throw new Error(`Rate not found for ${from} -> ${to}`);
+    return fallbackRate;
   }
 
-  return json.rates;
+  const json: FrankfurterResponse = await response.json();
+  const rate = json.rates[to];
+
+  if (!rate) throw new Error(`Rate not found for ${from} -> ${to} on ${date}`);
+
+  // Cache in Supabase
+  await supabase.from("exchange_rates").upsert(
+    {
+      base_currency: from,
+      target_currency: to,
+      rate,
+      fetched_at: date,
+    },
+    { onConflict: "base_currency,target_currency,fetched_at" }
+  );
+
+  return rate;
 }
 
-export async function convertAmount(
+/**
+ * Convert amount using the exchange rate for a specific date
+ */
+export async function convertAmountForDate(
   amount: number,
   fromCurrency: string,
-  toCurrency: string
+  toCurrency: string,
+  date: string
 ): Promise<{ converted: number; rate: number }> {
   if (fromCurrency === toCurrency) {
     return { converted: amount, rate: 1 };
   }
 
-  const rates = await fetchExchangeRates(fromCurrency);
-  const rate = rates[toCurrency];
-
-  if (!rate) throw new Error(`Rate not found for ${fromCurrency} -> ${toCurrency}`);
+  const rate = await fetchRateForDate(fromCurrency, toCurrency, date);
 
   return {
     converted: Math.round(amount * rate * 100) / 100,
     rate,
   };
+}
+
+/**
+ * Convert amount using today's rate (for live preview in CurrencySelector)
+ */
+export async function convertAmount(
+  amount: number,
+  fromCurrency: string,
+  toCurrency: string
+): Promise<{ converted: number; rate: number }> {
+  const today = new Date().toISOString().split("T")[0];
+  return convertAmountForDate(amount, fromCurrency, toCurrency, today);
 }

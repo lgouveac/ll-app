@@ -27,7 +27,7 @@ import {
   getExpense,
   uploadPhoto,
 } from "@/services/expenseService";
-import { convertAmount } from "@/services/currencyService";
+import { convertAmount, convertAmountForDate } from "@/services/currencyService";
 import type { SplitType } from "@/types/expense";
 import { CATEGORIES, CURRENCIES } from "@/types/expense";
 import type { ExtractedReceipt } from "@/services/receiptExtractor";
@@ -604,9 +604,10 @@ export default function AddExpense() {
                   let exchangeRate: number | null = null;
                   let baseCurrency: string | null = null;
                   const needsConversion = extractedCurrency !== defaultCurrency;
+                  const expenseDate = extractedDate || format(new Date(), "yyyy-MM-dd");
 
                   if (needsConversion) {
-                    const convResult = await convertAmount(1, extractedCurrency, defaultCurrency);
+                    const convResult = await convertAmountForDate(1, extractedCurrency, defaultCurrency, expenseDate);
                     exchangeRate = convResult.rate;
                     baseCurrency = defaultCurrency;
                   }
