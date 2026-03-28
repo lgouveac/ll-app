@@ -19,6 +19,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 import { useGroup } from "@/hooks/useGroup";
 import {
   createExpense,
@@ -67,6 +68,7 @@ export default function AddExpense() {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
 
+  const { user } = useAuth();
   const { group, members } = useGroup();
 
   // Split state (managed outside RHF)
@@ -129,10 +131,11 @@ export default function AddExpense() {
     }
   }, [members, selectedMembers.length, isEdit]);
 
-  // Default payer to first member
+  // Default payer to current user's member (or first member as fallback)
   useEffect(() => {
     if (members.length > 0 && !watchedPaidBy && !isEdit) {
-      setValue("paid_by", members[0].id);
+      const myMember = members.find((m) => m.user_id === user?.id);
+      setValue("paid_by", myMember?.id ?? members[0].id);
     }
   }, [members, watchedPaidBy, isEdit, setValue]);
 
