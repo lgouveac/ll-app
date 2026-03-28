@@ -88,8 +88,13 @@ export default function ExpenseCard({ expense, onClick }: ExpenseCardProps) {
       {/* Right: amount + split */}
       <div className="shrink-0 text-right">
         <p className="text-sm font-bold text-foreground">
-          {formatCurrency(expense.amount, expense.currency)}
+          {formatCurrency(expense.converted_amount ?? expense.amount, expense.base_currency ?? expense.currency)}
         </p>
+        {expense.converted_amount != null && expense.currency !== expense.base_currency && (
+          <p className="text-[10px] text-muted-foreground">
+            {formatCurrency(expense.amount, expense.currency)}
+          </p>
+        )}
         {splitCount > 1 && (
           <p className="mt-0.5 text-xs text-muted-foreground">
             &divide; {splitCount}

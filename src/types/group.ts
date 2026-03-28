@@ -3,6 +3,7 @@ export interface Group {
   user_id: string;
   name: string;
   default_currency: string;
+  budget: number | null;
   created_at: string;
 }
 

@@ -55,7 +55,7 @@ export async function createGroup(name: string, defaultCurrency: string): Promis
   return data;
 }
 
-export async function updateGroup(id: string, updates: Partial<Pick<Group, "name" | "default_currency">>): Promise<Group> {
+export async function updateGroup(id: string, updates: Partial<Pick<Group, "name" | "default_currency" | "budget">>): Promise<Group> {
   const { data, error } = await supabase
     .from("groups")
     .update(updates)

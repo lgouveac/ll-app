@@ -4,8 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useGroup } from "@/hooks/useGroup";
 import { getRecentExpenses } from "@/services/expenseService";
 import BalanceCard from "@/components/dashboard/BalanceCard";
+import BudgetBar from "@/components/dashboard/BudgetBar";
 import RecentExpenses from "@/components/dashboard/RecentExpenses";
 import QuickAddButton from "@/components/dashboard/QuickAddButton";
+import { getExpenses } from "@/services/expenseService";
 
 function SkeletonCard({ className }: { className?: string }) {
   return (
@@ -40,6 +42,16 @@ export default function Dashboard() {
     enabled: !!group,
   });
 
+  // All expenses for budget calculation
+  const { data: allExpenses = [] } = useQuery({
+    queryKey: ["expenses", "all", group?.id],
+    queryFn: () => getExpenses(group!.id),
+    enabled: !!group,
+  });
+
+  // Total spent in group currency
+  const totalSpent = allExpenses.reduce((sum, e) => sum + (e.converted_amount ?? e.amount), 0);
+
   const isLoading = groupLoading || expensesLoading;
 
   return (
@@ -69,6 +81,16 @@ export default function Dashboard() {
           expenses={expenses}
           members={members}
           currency={group?.default_currency ?? "USD"}
+          className="mb-6"
+        />
+      )}
+
+      {/* Budget Bar */}
+      {!isLoading && group?.budget != null && group.budget > 0 && (
+        <BudgetBar
+          spent={totalSpent}
+          budget={group.budget}
+          currency={group.default_currency}
           className="mb-6"
         />
       )}

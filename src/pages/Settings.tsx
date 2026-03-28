@@ -15,24 +15,28 @@ export default function Settings() {
 
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState("BRL");
+  const [budget, setBudget] = useState<string>("");
   const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     if (group) {
       setName(group.name);
       setCurrency(group.default_currency);
+      setBudget(group.budget != null ? String(group.budget) : "");
     }
   }, [group]);
 
+  const budgetNum = budget ? Number(budget) : null;
   const isDirty =
     group != null &&
-    (name.trim() !== group.name || currency !== group.default_currency);
+    (name.trim() !== group.name || currency !== group.default_currency || budgetNum !== group.budget);
 
   const saveMutation = useMutation({
     mutationFn: () =>
       updateGroup(group!.id, {
         name: name.trim(),
         default_currency: currency,
+        budget: budgetNum,
       }),
     onSuccess: () => {
       toast.success("Configuracoes salvas!");
@@ -102,6 +106,22 @@ export default function Settings() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-white/70">
+                Limite de gasto ({currency})
+              </label>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder="Ex: 5000.00 (sem limite se vazio)"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 outline-none transition-colors focus:border-[#7C3AED]/50 focus:ring-1 focus:ring-[#7C3AED]/30"
+              />
             </div>
           </div>
 
