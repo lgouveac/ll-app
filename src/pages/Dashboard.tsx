@@ -68,6 +68,7 @@ export default function Dashboard() {
         <BalanceCard
           expenses={expenses}
           members={members}
+          currency={group?.default_currency ?? "USD"}
           className="mb-6"
         />
       )}

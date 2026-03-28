@@ -8,12 +8,14 @@ import type { Member } from "@/types/group";
 interface BalanceCardProps {
   expenses: Expense[];
   members: Member[];
+  currency: string;
   className?: string;
 }
 
 export default function BalanceCard({
   expenses,
   members,
+  currency,
   className,
 }: BalanceCardProps) {
   const balances = calculateBalances(expenses);
@@ -81,7 +83,7 @@ export default function BalanceCard({
                 />
 
                 <span className="shrink-0 text-sm font-bold text-white">
-                  {formatCurrency(debt.amount)}
+                  {formatCurrency(debt.amount, currency)}
                 </span>
               </li>
             );
