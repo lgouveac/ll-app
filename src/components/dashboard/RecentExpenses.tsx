@@ -109,7 +109,7 @@ export default function RecentExpenses({
               </div>
 
               <span className="shrink-0 text-sm font-semibold text-card-foreground">
-                {formatCurrency(expense.amount, expense.currency)}
+                {formatCurrency(expense.converted_amount ?? expense.amount, expense.base_currency ?? expense.currency)}
               </span>
             </li>
           );

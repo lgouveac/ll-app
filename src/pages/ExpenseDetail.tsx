@@ -163,18 +163,21 @@ export default function ExpenseDetail() {
           {expense.description}
         </h1>
 
-        <p className="mt-1 text-3xl font-extrabold gradient-romantic bg-clip-text text-transparent">
-          {formatCurrency(expense.amount, expense.currency)}
-        </p>
-
-        {expense.converted_amount != null &&
-          expense.base_currency &&
-          expense.exchange_rate && (
-            <p className="mt-1 text-sm text-muted-foreground">
-              {formatCurrency(expense.converted_amount, expense.base_currency)}{" "}
-              (taxa: {expense.exchange_rate.toFixed(4)})
+        {expense.converted_amount != null && expense.base_currency ? (
+          <>
+            <p className="mt-1 text-3xl font-extrabold gradient-romantic bg-clip-text text-transparent">
+              {formatCurrency(expense.converted_amount, expense.base_currency)}
             </p>
-          )}
+            <p className="mt-1 text-sm text-muted-foreground">
+              Original: {formatCurrency(expense.amount, expense.currency)}
+              {expense.exchange_rate && ` (taxa: ${expense.exchange_rate.toFixed(4)})`}
+            </p>
+          </>
+        ) : (
+          <p className="mt-1 text-3xl font-extrabold gradient-romantic bg-clip-text text-transparent">
+            {formatCurrency(expense.amount, expense.currency)}
+          </p>
+        )}
       </div>
 
       {/* Photo */}
@@ -234,7 +237,7 @@ export default function ExpenseDetail() {
                 {expense.payer.name}
               </p>
               <p className="text-xs text-muted-foreground">
-                Pagou {formatCurrency(expense.amount, expense.currency)}
+                Pagou {formatCurrency(expense.converted_amount ?? expense.amount, expense.base_currency ?? expense.currency)}
               </p>
             </div>
           </div>
@@ -275,7 +278,7 @@ export default function ExpenseDetail() {
                 </div>
 
                 <p className="shrink-0 text-sm font-semibold text-foreground">
-                  {formatCurrency(split.amount, expense.currency)}
+                  {formatCurrency(split.amount, expense.base_currency ?? expense.currency)}
                 </p>
               </div>
             ))}

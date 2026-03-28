@@ -28,7 +28,7 @@ import {
   getExpense,
   uploadPhoto,
 } from "@/services/expenseService";
-import { convertAmount, convertAmountForDate } from "@/services/currencyService";
+import { convertAmountForDate } from "@/services/currencyService";
 import type { SplitType } from "@/types/expense";
 import { CATEGORIES, CURRENCIES } from "@/types/expense";
 import type { ExtractedReceipt } from "@/services/receiptExtractor";
@@ -88,8 +88,8 @@ export default function AddExpense() {
   const [extractedCurrency, setExtractedCurrency] = useState("");
   const [extractedDate, setExtractedDate] = useState("");
 
-  // Currency conversion cache
-  const [convertedPreview, setConvertedPreview] = useState<{
+  // Currency conversion cache (used by CurrencySelector preview)
+  const [, setConvertedPreview] = useState<{
     converted: number;
     rate: number;
   } | null>(null);
@@ -137,7 +137,7 @@ export default function AddExpense() {
       const myMember = members.find((m) => m.user_id === user?.id);
       setValue("paid_by", myMember?.id ?? members[0].id);
     }
-  }, [members, watchedPaidBy, isEdit, setValue]);
+  }, [members, watchedPaidBy, isEdit, setValue, user?.id]);
 
   // --- Fetch existing expense for edit mode ---
   const { data: existingExpense } = useQuery({
@@ -238,10 +238,8 @@ export default function AddExpense() {
 
       // Currency conversion
       if (data.currency !== defaultCurrency) {
-        const result = convertedPreview
-          ? convertedPreview
-          : await convertAmount(data.amount, data.currency, defaultCurrency);
-
+        // Use historical rate for the expense date
+        const result = await convertAmountForDate(data.amount, data.currency, defaultCurrency, data.date);
         convertedAmount = result.converted;
         baseCurrency = defaultCurrency;
         exchangeRate = result.rate;
