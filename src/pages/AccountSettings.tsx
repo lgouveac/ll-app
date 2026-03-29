@@ -1,32 +1,35 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, LogOut, Inbox, ChevronRight } from "lucide-react";
+import { User, Mail, LogOut, Inbox, ChevronRight, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useI18n } from "@/hooks/useI18n";
+import { type Locale, LOCALE_LABELS } from "@/i18n";
 
 export default function AccountSettings() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { t, locale, setLocale } = useI18n();
   const [signingOut, setSigningOut] = useState(false);
 
   const email = user?.email ?? "";
   const displayName = email.split("@")[0];
 
   async function handleSignOut() {
-    if (!window.confirm("Tem certeza que deseja sair?")) return;
+    if (!window.confirm(t("account.signOutConfirm"))) return;
     setSigningOut(true);
     try {
       await signOut();
       navigate("/auth", { replace: true });
     } catch {
-      toast.error("Erro ao sair");
+      toast.error(t("account.signOutError"));
       setSigningOut(false);
     }
   }
 
   return (
     <div className="space-y-6 pt-2">
-      <h1 className="text-xl font-bold">Minha conta</h1>
+      <h1 className="text-xl font-bold">{t("account.title")}</h1>
 
       {/* Profile info */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
@@ -44,6 +47,29 @@ export default function AccountSettings() {
         </div>
       </div>
 
+      {/* Language selector */}
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-center gap-3 mb-3">
+          <Globe className="h-5 w-5 text-muted-foreground" />
+          <p className="text-sm font-medium">Idioma / Language</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {(Object.entries(LOCALE_LABELS) as [Locale, string][]).map(([code, label]) => (
+            <button
+              key={code}
+              onClick={() => setLocale(code)}
+              className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                locale === code
+                  ? "bg-gradient-to-r from-primary to-secondary text-white"
+                  : "border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Navigation */}
       <div className="space-y-2">
         <button
@@ -54,8 +80,8 @@ export default function AccountSettings() {
             <Inbox className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium">Convites pendentes</p>
-            <p className="text-xs text-muted-foreground">Ver e aceitar convites de grupos</p>
+            <p className="text-sm font-medium">{t("account.invites")}</p>
+            <p className="text-xs text-muted-foreground">{t("account.invitesDesc")}</p>
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </button>
@@ -73,7 +99,7 @@ export default function AccountSettings() {
           ) : (
             <>
               <LogOut className="h-4 w-4" />
-              Sair da conta
+              {t("account.signOut")}
             </>
           )}
         </button>

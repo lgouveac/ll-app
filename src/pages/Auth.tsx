@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useI18n } from "@/hooks/useI18n";
 import { acceptInvitation } from "@/services/invitationService";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const { signIn, signUp, resendConfirmation, user } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   // If user is already logged in
@@ -52,11 +54,11 @@ export default function Auth() {
   async function handleAcceptInvite(id: string) {
     try {
       await acceptInvitation(id);
-      toast.success("Convite aceito! Bem-vindo ao grupo.");
+      toast.success(t("auth.inviteAccepted"));
       navigate("/", { replace: true });
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Erro ao aceitar convite"
+        err instanceof Error ? err.message : t("auth.inviteError")
       );
       navigate("/", { replace: true });
     }
@@ -82,7 +84,7 @@ export default function Auth() {
         console.log("[Auth] signUp result:", { user: !!result.user, session: !!result.session });
 
         if (result.session) {
-          toast.success("Conta criada!");
+          toast.success(t("auth.accountCreated"));
           if (!inviteId) navigate("/", { replace: true });
         } else {
           // Email confirmation required — show check-email screen
@@ -93,7 +95,7 @@ export default function Auth() {
         console.log("[Auth] Calling signIn...");
         await signIn(data.email, data.password);
         console.log("[Auth] signIn success");
-        toast.success("Bem-vindo de volta!");
+        toast.success(t("auth.welcomeBack"));
         if (!inviteId) navigate("/", { replace: true });
       }
     } catch (error: unknown) {
@@ -101,13 +103,13 @@ export default function Auth() {
       console.error("[Auth] Error:", message);
 
       if (message.includes("Invalid login credentials")) {
-        toast.error("Email ou senha incorretos");
+        toast.error(t("auth.wrongCredentials"));
       } else if (message.includes("Email not confirmed")) {
-        toast.error("Confirme seu email antes de entrar.");
+        toast.error(t("auth.confirmFirst"));
         setPendingEmail(data.email);
         setAuthState("check-email");
       } else if (message.includes("User already registered")) {
-        toast.error("Este email ja esta cadastrado. Tente entrar.");
+        toast.error(t("auth.alreadyRegistered"));
         setMode("login");
       } else {
         toast.error(message);
@@ -122,7 +124,7 @@ export default function Auth() {
     setIsResending(true);
     try {
       await resendConfirmation(pendingEmail);
-      toast.success("Email reenviado!");
+      toast.success(t("auth.emailResent"));
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Erro ao reenviar"
@@ -144,14 +146,14 @@ export default function Auth() {
             </div>
           </div>
           <h1 className="mb-2 text-2xl font-bold text-foreground">
-            Verifique seu email
+            {t("auth.checkEmail")}
           </h1>
           <p className="mb-2 text-muted-foreground">
-            Enviamos um link de confirmacao para:
+            {t("auth.checkEmailSent")}
           </p>
           <p className="mb-6 font-medium text-foreground">{pendingEmail}</p>
           <p className="mb-8 text-sm text-muted-foreground">
-            Clique no link no email para ativar sua conta. Depois volte aqui e faca login.
+            {t("auth.checkEmailInstruction")}
           </p>
 
           <div className="space-y-3">
@@ -165,7 +167,7 @@ export default function Auth() {
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              Reenviar email
+              {t("auth.resendEmail")}
             </button>
 
             <button
@@ -175,12 +177,12 @@ export default function Auth() {
               }}
               className="gradient-romantic flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-medium text-white"
             >
-              Ja confirmei, fazer login
+              {t("auth.alreadyConfirmed")}
             </button>
           </div>
 
           <p className="mt-6 text-xs text-muted-foreground">
-            Nao recebeu? Verifique a pasta de spam.
+            {t("auth.checkSpam")}
           </p>
         </div>
       </div>
@@ -198,10 +200,10 @@ export default function Auth() {
             <Heart className="h-7 w-7 text-white" fill="white" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            L&L
+            {t("auth.title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Split with Love
+            {t("auth.subtitle")}
           </p>
         </div>
 
@@ -210,7 +212,7 @@ export default function Auth() {
           <div className="mb-4 flex items-center gap-3 rounded-xl border border-secondary/30 bg-secondary/10 px-4 py-3">
             <UserPlus className="h-5 w-5 shrink-0 text-secondary" />
             <p className="text-sm text-foreground">
-              Voce recebeu um convite! {mode === "signup" ? "Crie uma conta" : "Entre"} para aceitar.
+              {mode === "signup" ? t("auth.inviteBanner.signup") : t("auth.inviteBanner.login")}
             </p>
           </div>
         )}
@@ -229,7 +231,7 @@ export default function Auth() {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              Entrar
+              {t("auth.login")}
             </button>
             <button
               type="button"
@@ -241,14 +243,14 @@ export default function Auth() {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              Criar conta
+              {t("auth.signup")}
             </button>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-sm font-medium text-muted-foreground">
-                E-mail
+                {t("common.email")}
               </label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -256,7 +258,7 @@ export default function Auth() {
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="seu@email.com"
+                  placeholder={t("auth.emailPlaceholder")}
                   className={cn(
                     "h-11 w-full rounded-lg border border-input bg-accent pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground",
                     errors.email && "border-destructive",
@@ -271,7 +273,7 @@ export default function Auth() {
 
             <div className="space-y-1.5">
               <label htmlFor="password" className="text-sm font-medium text-muted-foreground">
-                Senha
+                {t("common.password")}
               </label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -279,7 +281,7 @@ export default function Auth() {
                   id="password"
                   type="password"
                   autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                  placeholder="••••••"
+                  placeholder={t("auth.passwordPlaceholder")}
                   className={cn(
                     "h-11 w-full rounded-lg border border-input bg-accent pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground",
                     errors.password && "border-destructive",
@@ -301,7 +303,7 @@ export default function Auth() {
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <>
-                  {mode === "signup" ? "Criar conta" : "Entrar"}
+                  {mode === "signup" ? t("auth.signup") : t("auth.login")}
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}

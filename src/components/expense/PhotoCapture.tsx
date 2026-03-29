@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Camera, FileUp, Loader2, Sparkles, X, File as FileIcon, Image } from "lucide-react";
 import { extractReceiptData, type ExtractedReceipt } from "@/services/receiptExtractor";
 import { toast } from "sonner";
+import { useI18n } from "@/hooks/useI18n";
 
 interface PhotoCaptureProps {
   value: File[] | null;
@@ -23,6 +24,7 @@ function isImage(file: File): boolean {
 export default function PhotoCapture({ value, onChange, onExtracted }: PhotoCaptureProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting] = useState(false);
+  const { t } = useI18n();
 
   const files = value ?? [];
 
@@ -44,10 +46,10 @@ export default function PhotoCapture({ value, onChange, onExtracted }: PhotoCapt
         try {
           const data = await extractReceiptData(firstImage);
           onExtracted(data);
-          toast.success("Dados extraidos automaticamente!");
+          toast.success(t("photo.extracted"));
         } catch (err) {
           console.error("Extraction failed:", err);
-          toast.error("Nao foi possivel extrair dados da imagem");
+          toast.error(t("photo.extractError"));
         } finally {
           setExtracting(false);
         }
@@ -66,9 +68,9 @@ export default function PhotoCapture({ value, onChange, onExtracted }: PhotoCapt
     try {
       const data = await extractReceiptData(file);
       onExtracted(data);
-      toast.success("Dados extraidos!");
+      toast.success(t("photo.extractedShort"));
     } catch {
-      toast.error("Nao foi possivel extrair dados");
+      toast.error(t("photo.extractErrorShort"));
     } finally {
       setExtracting(false);
     }
@@ -77,7 +79,7 @@ export default function PhotoCapture({ value, onChange, onExtracted }: PhotoCapt
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-muted-foreground">
-        Comprovantes / Arquivos
+        {t("photo.label")}
       </label>
 
       <input
@@ -164,12 +166,12 @@ export default function PhotoCapture({ value, onChange, onExtracted }: PhotoCapt
         </div>
         <div className="text-left">
           <span className="text-sm font-medium">
-            {files.length > 0 ? "Adicionar mais arquivos" : "Foto, imagem ou arquivo"}
+            {files.length > 0 ? t("photo.addMore") : t("photo.empty")}
           </span>
           {onExtracted && files.length === 0 && (
             <p className="flex items-center gap-1 text-xs text-primary">
               <Sparkles className="h-3 w-3" />
-              IA detecta gastos automaticamente
+              {t("photo.aiHint")}
             </p>
           )}
         </div>
@@ -179,7 +181,7 @@ export default function PhotoCapture({ value, onChange, onExtracted }: PhotoCapt
       {extracting && (
         <div className="flex items-center gap-2 rounded-lg bg-secondary/10 px-3 py-2">
           <Loader2 className="h-4 w-4 animate-spin text-secondary" />
-          <span className="text-sm text-secondary">Analisando...</span>
+          <span className="text-sm text-secondary">{t("photo.analyzing")}</span>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Users, ChevronRight, Heart } from "lucide-react";
 import { useGroup } from "@/hooks/useGroup";
 import { useAuth } from "@/hooks/useAuth";
+import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 
 
@@ -9,6 +10,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { groups, loading, setActiveGroup } = useGroup();
   const { user } = useAuth();
+  const { t } = useI18n();
 
   const userName = user?.email?.split("@")[0] || "voce";
 
@@ -35,8 +37,8 @@ export default function Home() {
     <div className="space-y-6 pt-2">
       {/* Header */}
       <div>
-        <p className="text-sm text-muted-foreground">Ola, {userName}</p>
-        <h1 className="text-2xl font-bold">Seus grupos</h1>
+        <p className="text-sm text-muted-foreground">{t("home.greeting", { name: userName })}</p>
+        <h1 className="text-2xl font-bold">{t("home.title")}</h1>
       </div>
 
       {/* Groups list */}
@@ -45,16 +47,16 @@ export default function Home() {
           <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full gradient-romantic-subtle">
             <Heart className="h-10 w-10 text-primary" />
           </div>
-          <h2 className="text-lg font-bold mb-2">Nenhum grupo ainda</h2>
+          <h2 className="text-lg font-bold mb-2">{t("home.empty.title")}</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Crie seu primeiro grupo para comecar a dividir despesas
+            {t("home.empty.description")}
           </p>
           <button
             onClick={() => navigate("/setup")}
             className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#7C3AED] px-6 py-3 font-medium text-white"
           >
             <Plus className="h-5 w-5" />
-            Criar grupo
+            {t("home.createGroup")}
           </button>
         </div>
       ) : (
@@ -92,7 +94,7 @@ export default function Home() {
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent">
               <Plus className="h-6 w-6 text-muted-foreground" />
             </div>
-            <span className="font-medium text-muted-foreground">Novo grupo</span>
+            <span className="font-medium text-muted-foreground">{t("home.newGroup")}</span>
           </button>
         </div>
       )}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Member } from "@/types/group";
 import { CATEGORIES } from "@/types/expense";
+import { t } from "@/i18n";
 
 interface Filters {
   paidBy?: string;
@@ -51,7 +52,7 @@ export default function ExpenseFilters({
   return (
     <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-2">
       <Chip
-        label="Todos"
+        label={t("filter.all")}
         active={isActive({ type: "all" })}
         onClick={() => select({ type: "all" })}
       />

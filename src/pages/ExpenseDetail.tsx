@@ -24,6 +24,8 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { getExpense, deleteExpense } from "@/services/expenseService";
 import { CATEGORIES } from "@/types/expense";
 import MemberAvatar from "@/components/members/MemberAvatar";
+import { useI18n } from "@/hooks/useI18n";
+import { t as tRaw } from "@/i18n";
 import { useState } from "react";
 
 const iconMap: Record<string, LucideIcon> = {
@@ -39,7 +41,7 @@ const iconMap: Record<string, LucideIcon> = {
 
 function getCategoryInfo(categoryValue: string | null) {
   const cat = CATEGORIES.find((c) => c.value === categoryValue);
-  if (!cat) return { label: "Outros", Icon: MoreHorizontal };
+  if (!cat) return { label: tRaw("category.other"), Icon: MoreHorizontal };
   return { label: cat.label, Icon: iconMap[cat.icon] ?? MoreHorizontal };
 }
 
@@ -47,6 +49,7 @@ export default function ExpenseDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const {
@@ -68,10 +71,10 @@ export default function ExpenseDetail() {
     try {
       await deleteExpense(id!);
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      toast.success("Despesa excluida com sucesso");
+      toast.success(t("expense.deleted"));
       navigate(-1);
     } catch {
-      toast.error("Erro ao excluir despesa");
+      toast.error(t("expense.deleteError"));
     }
   }
 
@@ -94,13 +97,13 @@ export default function ExpenseDetail() {
   if (isError || !expense) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-        <p className="text-muted-foreground">Despesa nao encontrada.</p>
+        <p className="text-muted-foreground">{t("expense.notFound")}</p>
         <button
           type="button"
           onClick={() => navigate(-1)}
           className="mt-4 text-sm font-medium text-primary"
         >
-          Voltar
+          {t("common.back")}
         </button>
       </div>
     );
@@ -142,7 +145,7 @@ export default function ExpenseDetail() {
           >
             <Trash2 className="h-4 w-4" />
             {confirmDelete && (
-              <span className="ml-1.5 text-xs font-medium">Confirmar</span>
+              <span className="ml-1.5 text-xs font-medium">{t("common.confirm")}</span>
             )}
           </button>
         </div>
@@ -169,7 +172,7 @@ export default function ExpenseDetail() {
               {formatCurrency(expense.converted_amount, expense.base_currency)}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Original: {formatCurrency(expense.amount, expense.currency)}
+              {t("expense.original", { amount: formatCurrency(expense.amount, expense.currency) })}
               {expense.exchange_rate && ` (taxa: ${expense.exchange_rate.toFixed(4)})`}
             </p>
           </>
@@ -186,7 +189,7 @@ export default function ExpenseDetail() {
           <div className="overflow-hidden rounded-xl border border-border">
             <img
               src={expense.photo_url}
-              alt="Comprovante"
+              alt={t("photo.label")}
               className="w-full object-cover"
               loading="lazy"
             />
@@ -223,7 +226,7 @@ export default function ExpenseDetail() {
       {/* Quem pagou */}
       <div className="mt-6 px-4">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Quem pagou
+          {t("expense.whoPaid")}
         </h2>
         {expense.payer && (
           <div className="flex items-center gap-3 rounded-lg bg-card p-3">
@@ -237,7 +240,7 @@ export default function ExpenseDetail() {
                 {expense.payer.name}
               </p>
               <p className="text-xs text-muted-foreground">
-                Pagou {formatCurrency(expense.converted_amount ?? expense.amount, expense.base_currency ?? expense.currency)}
+                {t("expense.paid", { amount: formatCurrency(expense.converted_amount ?? expense.amount, expense.base_currency ?? expense.currency) })}
               </p>
             </div>
           </div>
@@ -248,7 +251,7 @@ export default function ExpenseDetail() {
       {expense.splits && expense.splits.length > 0 && (
         <div className="mt-6 px-4 pb-6">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Divisao
+            {t("expense.split")}
           </h2>
           <div className="space-y-2">
             {expense.splits.map((split) => (
@@ -268,7 +271,7 @@ export default function ExpenseDetail() {
 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">
-                    {split.member?.name ?? "Membro"}
+                    {split.member?.name ?? t("common.member")}
                   </p>
                   {split.percentage > 0 && (
                     <p className="text-xs text-muted-foreground">
@@ -294,7 +297,7 @@ export default function ExpenseDetail() {
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-3 text-sm font-medium text-foreground transition-colors hover:bg-card"
         >
           <Edit2 className="h-4 w-4" />
-          Editar despesa
+          {t("expense.edit")}
         </button>
         <button
           type="button"
@@ -307,7 +310,7 @@ export default function ExpenseDetail() {
           )}
         >
           <Trash2 className="h-4 w-4" />
-          {confirmDelete ? "Toque novamente para confirmar" : "Excluir despesa"}
+          {confirmDelete ? t("expense.deleteConfirm") : t("expense.deleteButton")}
         </button>
       </div>
     </div>

@@ -16,6 +16,7 @@ import type { LucideIcon } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import MemberAvatar from "@/components/members/MemberAvatar";
 import EmptyState from "@/components/shared/EmptyState";
+import { t } from "@/i18n";
 import type { Expense } from "@/types/expense";
 
 interface RecentExpensesProps {
@@ -49,8 +50,8 @@ export default function RecentExpenses({
     return (
       <EmptyState
         icon={Receipt}
-        title="Sem despesas ainda"
-        description="Adicione a primeira despesa do grupo para comecar a dividir."
+        title={t("history.empty.title")}
+        description={t("history.empty.description")}
         className={className}
       />
     );
@@ -60,13 +61,13 @@ export default function RecentExpenses({
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-foreground">
-          Despesas recentes
+          {t("history.recent")}
         </h2>
         <button
           onClick={onViewAll}
           className="flex items-center gap-1 text-sm font-medium text-secondary hover:text-secondary/80 transition-colors"
         >
-          Ver todas
+          {t("history.viewAll")}
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>

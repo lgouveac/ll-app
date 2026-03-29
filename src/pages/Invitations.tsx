@@ -5,9 +5,11 @@ import { cn } from "@/lib/utils";
 import { getMyInvitations, acceptInvitation, declineInvitation } from "@/services/invitationService";
 import MemberAvatar from "@/components/members/MemberAvatar";
 import EmptyState from "@/components/shared/EmptyState";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function Invitations() {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
 
   const { data: invitations = [], isLoading } = useQuery({
     queryKey: ["invitations"],
@@ -17,7 +19,7 @@ export default function Invitations() {
   const acceptMutation = useMutation({
     mutationFn: acceptInvitation,
     onSuccess: () => {
-      toast.success("Convite aceito! Voce agora faz parte do grupo.");
+      toast.success(t("invitations.accepted"));
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
       queryClient.invalidateQueries({ queryKey: ["group"] });
       queryClient.invalidateQueries({ queryKey: ["members"] });
@@ -28,7 +30,7 @@ export default function Invitations() {
   const declineMutation = useMutation({
     mutationFn: declineInvitation,
     onSuccess: () => {
-      toast.success("Convite recusado.");
+      toast.success(t("invitations.declined"));
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -46,15 +48,15 @@ export default function Invitations() {
     return (
       <EmptyState
         icon={Heart}
-        title="Nenhum convite"
-        description="Quando alguem te convidar para um grupo, aparecera aqui."
+        title={t("invitations.empty.title")}
+        description={t("invitations.empty.description")}
       />
     );
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-bold">Convites pendentes</h2>
+      <h2 className="text-lg font-bold">{t("invitations.pending")}</h2>
 
       {invitations.map((inv) => (
         <div
@@ -74,10 +76,7 @@ export default function Invitations() {
                 {inv.group?.name ?? "Grupo"}
               </p>
               <p className="text-sm text-muted-foreground">
-                Voce foi convidado como{" "}
-                <span className="text-foreground font-medium">
-                  {inv.member?.name}
-                </span>
+                {t("invitations.invitedAs", { name: inv.member?.name ?? "" })}
               </p>
             </div>
           </div>
@@ -97,7 +96,7 @@ export default function Invitations() {
               ) : (
                 <Check className="h-4 w-4" />
               )}
-              Aceitar
+              {t("invitations.accept")}
             </button>
             <button
               onClick={() => declineMutation.mutate(inv.id)}
@@ -109,7 +108,7 @@ export default function Invitations() {
               )}
             >
               <X className="h-4 w-4" />
-              Recusar
+              {t("invitations.decline")}
             </button>
           </div>
         </div>

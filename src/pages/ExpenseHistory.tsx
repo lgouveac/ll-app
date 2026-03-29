@@ -10,6 +10,7 @@ import type { Expense } from "@/types/expense";
 import ExpenseCard from "@/components/expense/ExpenseCard";
 import ExpenseFilters from "@/components/expense/ExpenseFilters";
 import EmptyState from "@/components/shared/EmptyState";
+import { useI18n } from "@/hooks/useI18n";
 
 interface Filters {
   paidBy?: string;
@@ -21,6 +22,7 @@ interface Filters {
 export default function ExpenseHistory() {
   const navigate = useNavigate();
   const { group, members } = useGroup();
+  const { t } = useI18n();
   const [filters, setFilters] = useState<Filters>({});
 
   const { data: expenses = [], isLoading } = useQuery({
@@ -73,7 +75,7 @@ export default function ExpenseHistory() {
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
-          <h1 className="text-lg font-bold text-foreground">Historico</h1>
+          <h1 className="text-lg font-bold text-foreground">{t("history.title")}</h1>
           <span className="ml-auto rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
             {filtered.length}
           </span>
@@ -96,8 +98,8 @@ export default function ExpenseHistory() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Receipt}
-            title="Nenhuma despesa"
-            description="As despesas do grupo aparecerao aqui."
+            title={t("history.empty.title")}
+            description={t("history.empty.description")}
           />
         ) : (
           <div className="space-y-5 pb-4">

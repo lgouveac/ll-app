@@ -15,6 +15,7 @@ import type { Expense } from "@/types/expense";
 import { CATEGORIES } from "@/types/expense";
 import { cn, formatCurrency } from "@/lib/utils";
 import MemberAvatar from "@/components/members/MemberAvatar";
+import { t } from "@/i18n";
 
 const iconMap: Record<string, LucideIcon> = {
   UtensilsCrossed,
@@ -35,7 +36,7 @@ function getCategoryIcon(categoryValue: string | null): LucideIcon {
 
 function getCategoryLabel(categoryValue: string | null): string {
   const cat = CATEGORIES.find((c) => c.value === categoryValue);
-  return cat?.label ?? "Outros";
+  return cat?.label ?? t("category.other");
 }
 
 interface ExpenseCardProps {

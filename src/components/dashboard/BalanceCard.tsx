@@ -1,5 +1,6 @@
 import { Heart, ArrowRight } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
+import { t } from "@/i18n";
 import { calculateBalances, simplifyDebts } from "@/services/expenseService";
 import MemberAvatar from "@/components/members/MemberAvatar";
 import type { Expense } from "@/types/expense";
@@ -36,15 +37,15 @@ export default function BalanceCard({
       <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
 
       <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-white/70">
-        Saldo do grupo
+        {t("balance.title")}
       </h2>
 
       {isSettled ? (
         <div className="flex flex-col items-center gap-2 py-4">
           <Heart className="h-8 w-8 fill-white text-white" />
-          <p className="text-lg font-semibold text-white">Tudo acertado!</p>
+          <p className="text-lg font-semibold text-white">{t("balance.settled")}</p>
           <p className="text-sm text-white/60">
-            Nenhuma divida pendente
+            {t("balance.settledDesc")}
           </p>
         </div>
       ) : (

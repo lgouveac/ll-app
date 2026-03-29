@@ -3,6 +3,7 @@ import type { Member } from "@/types/group";
 import type { SplitType } from "@/types/expense";
 import MemberAvatar from "@/components/members/MemberAvatar";
 import { Check } from "lucide-react";
+import { t } from "@/i18n";
 
 interface SplitSelectorProps {
   members: Member[];
@@ -15,11 +16,13 @@ interface SplitSelectorProps {
   onCustomAmountsChange: (amounts: Record<string, number>) => void;
 }
 
-const SPLIT_OPTIONS: { value: SplitType; label: string }[] = [
-  { value: "equal", label: "Igual" },
-  { value: "custom", label: "Personalizado" },
-  { value: "full", label: "Total" },
-];
+function getSplitOptions(): { value: SplitType; label: string }[] {
+  return [
+    { value: "equal", label: t("split.equal") },
+    { value: "custom", label: t("split.custom") },
+    { value: "full", label: t("split.full") },
+  ];
+}
 
 export default function SplitSelector({
   members,
@@ -67,12 +70,12 @@ export default function SplitSelector({
   return (
     <div className="space-y-4">
       <label className="text-sm font-medium text-muted-foreground">
-        Divisao
+        {t("expense.split")}
       </label>
 
       {/* Split type buttons */}
       <div className="grid grid-cols-3 gap-2">
-        {SPLIT_OPTIONS.map((opt) => (
+        {getSplitOptions().map((opt) => (
           <button
             key={opt.value}
             type="button"
@@ -105,7 +108,7 @@ export default function SplitSelector({
         >
           {allSelected && <Check className="h-3 w-3" />}
         </div>
-        Selecionar todos
+        {t("split.selectAll")}
       </button>
 
       {/* Member list */}
@@ -209,10 +212,10 @@ export default function SplitSelector({
           )}
         >
           {Math.abs(remaining) < 0.01
-            ? "Valor distribuido corretamente"
+            ? t("split.balanced")
             : remaining > 0
-              ? `Faltam ${formatCurrency(remaining)} para distribuir`
-              : `Excedente de ${formatCurrency(Math.abs(remaining))}`}
+              ? t("split.remaining", { amount: formatCurrency(remaining) })
+              : t("split.excess", { amount: formatCurrency(Math.abs(remaining)) })}
         </div>
       )}
     </div>

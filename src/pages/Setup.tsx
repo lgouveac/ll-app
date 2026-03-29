@@ -8,6 +8,7 @@ import { CURRENCIES } from "@/types/expense";
 import { createGroup } from "@/services/groupService";
 import { addMember } from "@/services/memberService";
 import { useAuth } from "@/hooks/useAuth";
+import { useI18n } from "@/hooks/useI18n";
 import MemberAvatar from "@/components/members/MemberAvatar";
 
 interface PendingMember {
@@ -21,6 +22,7 @@ export default function Setup() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { t } = useI18n();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [groupName, setGroupName] = useState("");
@@ -40,7 +42,7 @@ export default function Setup() {
     if (!trimmed) return;
     const allNames = [myName, ...members.map((m) => m.name)];
     if (allNames.some((n) => n.toLowerCase() === trimmed.toLowerCase())) {
-      toast.error("Ja existe um membro com esse nome");
+      toast.error(t("setup.duplicateName"));
       return;
     }
     setMembers((prev) => [
@@ -79,7 +81,7 @@ export default function Setup() {
       const { data: { user: freshUser }, error: userError } = await supabase.auth.getUser();
 
       if (!freshUser || userError) {
-        toast.error("Sessao expirada. Faca login novamente.");
+        toast.error(t("setup.sessionExpired"));
         navigate("/auth", { replace: true });
         return;
       }
@@ -102,11 +104,11 @@ export default function Setup() {
       await queryClient.invalidateQueries({ queryKey: ["group"] });
       await queryClient.invalidateQueries({ queryKey: ["members"] });
 
-      toast.success("Grupo criado com sucesso!");
+      toast.success(t("setup.groupCreated"));
       navigate("/", { replace: true });
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Erro ao criar grupo"
+        error instanceof Error ? error.message : t("setup.groupError")
       );
     } finally {
       setSaving(false);
@@ -122,11 +124,11 @@ export default function Setup() {
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#DC2626] to-[#7C3AED]">
             <Heart className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Vamos comecar!</h1>
+          <h1 className="text-2xl font-bold text-white">{t("setup.title")}</h1>
           <p className="mt-2 text-sm text-white/60">
-            {step === 1 && "De um nome ao seu grupo"}
-            {step === 2 && "Como voce se chama?"}
-            {step === 3 && "Adicione as outras pessoas"}
+            {step === 1 && t("setup.step1")}
+            {step === 2 && t("setup.step2")}
+            {step === 3 && t("setup.step3")}
           </p>
 
           {/* Step indicator */}
@@ -151,14 +153,14 @@ export default function Setup() {
           <div className="mx-auto max-w-md space-y-6">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
               <label className="mb-2 block text-sm font-medium text-white/70">
-                Nome do grupo
+                {t("setup.groupName")}
               </label>
               <input
                 type="text"
                 value={groupName}
                 onChange={(e) => setGroupName(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ex: Casa, Viagem Europa, Casal..."
+                placeholder={t("setup.groupNamePlaceholder")}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 outline-none transition-colors focus:border-[#DC2626]/50"
                 autoFocus
               />
@@ -166,7 +168,7 @@ export default function Setup() {
 
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
               <label className="mb-2 block text-sm font-medium text-white/70">
-                Moeda padrao
+                {t("setup.defaultCurrency")}
               </label>
               <select
                 value={currency}
@@ -186,7 +188,7 @@ export default function Setup() {
               disabled={!canProceedStep1}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#7C3AED] px-6 py-3.5 font-semibold text-white transition-opacity disabled:opacity-40"
             >
-              Proximo <ChevronRight className="h-4 w-4" />
+              {t("common.next")} <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -196,7 +198,7 @@ export default function Setup() {
           <div className="mx-auto max-w-md space-y-6">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
               <label className="mb-2 block text-sm font-medium text-white/70">
-                Seu nome (como aparecera no grupo)
+                {t("setup.yourName")}
               </label>
               <div className="flex items-center gap-3">
                 <MemberAvatar name={myName || "?"} color={getAvatarColor(0)} size="md" />
@@ -205,7 +207,7 @@ export default function Setup() {
                   value={myName}
                   onChange={(e) => setMyName(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Seu nome"
+                  placeholder={t("setup.yourNamePlaceholder")}
                   className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 outline-none transition-colors focus:border-[#7C3AED]/50"
                   autoFocus
                 />
@@ -220,14 +222,14 @@ export default function Setup() {
                 onClick={() => setStep(1)}
                 className="rounded-xl border border-white/10 px-5 py-3.5 font-medium text-white/70 hover:bg-white/5"
               >
-                Voltar
+                {t("common.back")}
               </button>
               <button
                 onClick={() => setStep(3)}
                 disabled={!canProceedStep2}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#7C3AED] px-6 py-3.5 font-semibold text-white transition-opacity disabled:opacity-40"
               >
-                Proximo <ChevronRight className="h-4 w-4" />
+                {t("common.next")} <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -239,7 +241,7 @@ export default function Setup() {
             {/* Add member input */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
               <label className="mb-2 block text-sm font-medium text-white/70">
-                Adicionar membro
+                {t("setup.addMember")}
               </label>
               <div className="space-y-2">
                 <input
@@ -247,7 +249,7 @@ export default function Setup() {
                   value={newMemberName}
                   onChange={(e) => setNewMemberName(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Nome"
+                  placeholder={t("setup.namePlaceholder")}
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 outline-none focus:border-[#7C3AED]/50"
                   autoFocus
                 />
@@ -256,7 +258,7 @@ export default function Setup() {
                   value={newMemberEmail}
                   onChange={(e) => setNewMemberEmail(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Email (opcional - pra enviar convite)"
+                  placeholder={t("setup.emailPlaceholder")}
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none focus:border-[#7C3AED]/50"
                 />
                 <button
@@ -265,7 +267,7 @@ export default function Setup() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7C3AED] px-4 py-2.5 text-sm font-medium text-white transition-opacity disabled:opacity-40"
                 >
                   <Plus className="h-4 w-4" />
-                  Adicionar
+                  {t("common.add")}
                 </button>
               </div>
             </div>
@@ -275,7 +277,7 @@ export default function Setup() {
               <div className="mb-3 flex items-center gap-2 px-1">
                 <Users className="h-4 w-4 text-white/50" />
                 <span className="text-sm font-medium text-white/50">
-                  {members.length + 1} membro{members.length > 0 ? "s" : ""}
+                  {members.length > 0 ? t("setup.membersCount", { count: members.length + 1 }) : t("setup.memberCount", { count: 1 })}
                 </span>
               </div>
               <div className="space-y-2">
@@ -284,7 +286,7 @@ export default function Setup() {
                   <MemberAvatar name={myName} color={getAvatarColor(0)} size="sm" />
                   <div className="flex-1">
                     <span className="text-sm font-medium text-white">
-                      {myName} <span className="text-xs text-primary">(voce)</span>
+                      {myName} <span className="text-xs text-primary">({t("common.you")})</span>
                     </span>
                     <p className="text-xs text-white/40">{user?.email}</p>
                   </div>
@@ -303,7 +305,7 @@ export default function Setup() {
                         <p className="text-xs text-white/40">{member.email}</p>
                       )}
                       {!member.email && (
-                        <p className="text-xs text-white/30">Sem email (sem convite)</p>
+                        <p className="text-xs text-white/30">{t("setup.noEmail")}</p>
                       )}
                     </div>
                     <button
@@ -319,7 +321,7 @@ export default function Setup() {
 
             {members.length < 1 && (
               <p className="text-center text-sm text-white/40">
-                Adicione pelo menos mais 1 pessoa para continuar
+                {t("setup.addMore")}
               </p>
             )}
 
@@ -328,7 +330,7 @@ export default function Setup() {
                 onClick={() => setStep(2)}
                 className="rounded-xl border border-white/10 px-5 py-3.5 font-medium text-white/70 hover:bg-white/5"
               >
-                Voltar
+                {t("common.back")}
               </button>
               <button
                 onClick={handleFinish}
@@ -340,7 +342,7 @@ export default function Setup() {
                 ) : (
                   <>
                     <Heart className="h-4 w-4" />
-                    Criar grupo
+                    {t("setup.createGroup")}
                   </>
                 )}
               </button>

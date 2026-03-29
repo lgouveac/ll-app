@@ -37,6 +37,7 @@ import PayerSelector from "@/components/expense/PayerSelector";
 import SplitSelector from "@/components/expense/SplitSelector";
 import CurrencySelector from "@/components/expense/CurrencySelector";
 import PhotoCapture from "@/components/expense/PhotoCapture";
+import { useI18n } from "@/hooks/useI18n";
 
 // --- Icon map ---
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -70,6 +71,7 @@ export default function AddExpense() {
 
   const { user } = useAuth();
   const { group, members } = useGroup();
+  const { t } = useI18n();
 
   // Split state (managed outside RHF)
   const [splitType, setSplitType] = useState<SplitType>("equal");
@@ -295,18 +297,18 @@ export default function AddExpense() {
     },
     onSuccess: () => {
       toast.success(
-        isEdit ? "Despesa atualizada!" : "Despesa adicionada!",
+        isEdit ? t("expense.updated") : t("expense.added"),
       );
       navigate("/");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Erro ao salvar despesa");
+      toast.error(error.message || t("expense.saveError"));
     },
   });
 
   const onSubmit = (data: Record<string, unknown>) => {
     if (selectedMembers.length === 0) {
-      toast.error("Selecione ao menos um participante na divisao");
+      toast.error(t("expense.selectParticipants"));
       return;
     }
     mutation.mutate(data as ExpenseFormData);
@@ -324,7 +326,7 @@ export default function AddExpense() {
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <h1 className="text-lg font-bold text-foreground">
-          {isEdit ? "Editar despesa" : "Nova despesa"}
+          {isEdit ? t("expense.edit") : t("expense.new")}
         </h1>
       </header>
 
@@ -335,11 +337,11 @@ export default function AddExpense() {
         {/* Description */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground">
-            Descricao
+            {t("common.description")}
           </label>
           <input
             {...register("description")}
-            placeholder="Ex: Jantar, Uber, Mercado..."
+            placeholder={t("expense.descriptionPlaceholder")}
             className={cn(
               "w-full rounded-xl border bg-card px-4 py-3 text-foreground",
               "placeholder:text-muted-foreground/50 outline-none transition-colors",
@@ -359,7 +361,7 @@ export default function AddExpense() {
         <div className="grid grid-cols-[1fr_auto] gap-3">
           <div className="space-y-2">
             <label className="text-sm font-medium text-muted-foreground">
-              Valor
+              {t("common.amount")}
             </label>
             <input
               {...register("amount")}
@@ -367,7 +369,7 @@ export default function AddExpense() {
               inputMode="decimal"
               step="0.01"
               min="0"
-              placeholder="0,00"
+              placeholder={t("expense.amountPlaceholder")}
               className={cn(
                 "w-full rounded-xl border bg-card px-4 py-3 text-lg font-semibold text-foreground",
                 "placeholder:text-muted-foreground/50 outline-none transition-colors",
@@ -399,7 +401,7 @@ export default function AddExpense() {
         {/* Date */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground">
-            Data
+            {t("common.date")}
           </label>
           <input
             {...register("date")}
@@ -416,7 +418,7 @@ export default function AddExpense() {
         {/* Category */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground">
-            Categoria
+            {t("common.category")}
           </label>
           <div className="grid grid-cols-4 gap-2">
             {CATEGORIES.map((cat) => {
@@ -510,13 +512,13 @@ export default function AddExpense() {
         {showExtracted && extractedExpenses.length > 0 && (
           <div className="rounded-xl border border-secondary/30 bg-card p-4 space-y-4">
             <p className="text-sm font-semibold text-foreground">
-              {extractedExpenses.length} gastos detectados
+              {t("expense.detected", { count: extractedExpenses.length })}
             </p>
 
             {/* Editable currency + date */}
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="text-xs font-medium text-muted-foreground">Moeda</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("common.currency")}</label>
                 <select
                   value={extractedCurrency}
                   onChange={(e) => setExtractedCurrency(e.target.value)}
@@ -528,7 +530,7 @@ export default function AddExpense() {
                 </select>
               </div>
               <div className="flex-1">
-                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("common.date")}</label>
                 <input
                   type="date"
                   value={extractedDate}
@@ -572,10 +574,10 @@ export default function AddExpense() {
             {/* Total */}
             <div className="flex items-center justify-between border-t border-border pt-3">
               <span className="text-sm text-muted-foreground">
-                {extractedExpenses.filter((e) => e.selected).length} selecionados
+                {t("expense.selected", { count: extractedExpenses.filter((e) => e.selected).length })}
               </span>
               <span className="text-sm font-bold text-foreground">
-                Total: {extractedExpenses.filter((e) => e.selected).reduce((s, e) => s + e.amount, 0).toFixed(2)} {extractedCurrency}
+                {t("common.total")}: {extractedExpenses.filter((e) => e.selected).reduce((s, e) => s + e.amount, 0).toFixed(2)} {extractedCurrency}
               </span>
             </div>
 
@@ -586,15 +588,15 @@ export default function AddExpense() {
               onClick={async () => {
                 const selected = extractedExpenses.filter((e) => e.selected);
                 if (selected.length === 0) {
-                  toast.error("Selecione ao menos um gasto");
+                  toast.error(t("expense.selectOneExpense"));
                   return;
                 }
                 if (!watchedPaidBy) {
-                  toast.error("Selecione quem pagou primeiro");
+                  toast.error(t("expense.selectPayerFirst"));
                   return;
                 }
                 if (selectedMembers.length === 0) {
-                  toast.error("Selecione os participantes da divisao primeiro");
+                  toast.error(t("expense.selectParticipantsFirst"));
                   return;
                 }
                 if (!group) return;
@@ -637,7 +639,7 @@ export default function AddExpense() {
                     selectedMembers
                   );
 
-                  toast.success(`${selected.length} despesas criadas!`);
+                  toast.success(t("expense.multipleCreated", { count: selected.length }));
                   setShowExtracted(false);
                   setExtractedExpenses([]);
                   navigate("/");
@@ -656,10 +658,10 @@ export default function AddExpense() {
               {savingMultiple ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Salvando...
+                  {t("common.saving")}
                 </span>
               ) : (
-                `Salvar ${extractedExpenses.filter((e) => e.selected).length} despesas separadas`
+                t("expense.saveMultiple", { count: extractedExpenses.filter((e) => e.selected).length })
               )}
             </button>
 
@@ -668,7 +670,7 @@ export default function AddExpense() {
               onClick={() => setShowExtracted(false)}
               className="w-full text-center text-xs text-muted-foreground hover:text-foreground"
             >
-              Cancelar
+              {t("common.cancel")}
             </button>
           </div>
         )}
@@ -676,12 +678,12 @@ export default function AddExpense() {
         {/* Notes */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground">
-            Notas
+            {t("common.notes")}
           </label>
           <textarea
             {...register("notes")}
             rows={3}
-            placeholder="Observacoes opcionais..."
+            placeholder={t("expense.notesPlaceholder")}
             className={cn(
               "w-full resize-none rounded-xl border border-border bg-card px-4 py-3",
               "text-sm text-foreground placeholder:text-muted-foreground/50",
@@ -704,12 +706,12 @@ export default function AddExpense() {
           {mutation.isPending ? (
             <span className="flex items-center justify-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Salvando...
+              {t("common.saving")}
             </span>
           ) : isEdit ? (
-            "Atualizar despesa"
+            t("expense.updateExpense")
           ) : (
-            "Adicionar despesa"
+            t("expense.addExpense")
           )}
         </button>
       </form>

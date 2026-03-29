@@ -6,10 +6,12 @@ import { toast } from "sonner";
 import { useGroup } from "@/hooks/useGroup";
 import { updateGroup } from "@/services/groupService";
 import { CURRENCIES } from "@/types/expense";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function Settings() {
   const navigate = useNavigate();
   const { group, refetch } = useGroup();
+  const { t } = useI18n();
 
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState("BRL");
@@ -36,7 +38,7 @@ export default function Settings() {
         budget: budgetNum,
       }),
     onSuccess: () => {
-      toast.success("Configuracoes salvas!");
+      toast.success(t("settings.saved"));
       refetch();
     },
     onError: (error: Error) => {
@@ -53,14 +55,14 @@ export default function Settings() {
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-secondary/20">
           <SettingsIcon className="h-5 w-5 text-muted-foreground" />
         </div>
-        <h1 className="text-xl font-bold">Config do grupo</h1>
+        <h1 className="text-xl font-bold">{t("settings.title")}</h1>
       </div>
 
       {/* Group settings */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div>
           <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-            Nome do grupo
+            {t("settings.groupName")}
           </label>
           <input
             type="text"
@@ -72,7 +74,7 @@ export default function Settings() {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-            Moeda padrao
+            {t("settings.defaultCurrency")}
           </label>
           <select
             value={currency}
@@ -89,7 +91,7 @@ export default function Settings() {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-muted-foreground">
-            Limite de gasto ({currency})
+            {t("settings.budget", { currency })}
           </label>
           <input
             type="number"
@@ -98,7 +100,7 @@ export default function Settings() {
             min="0"
             value={budget}
             onChange={(e) => setBudget(e.target.value)}
-            placeholder="Sem limite se vazio"
+            placeholder={t("settings.budgetPlaceholder")}
             className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-secondary"
           />
         </div>
@@ -113,7 +115,7 @@ export default function Settings() {
           ) : (
             <>
               <Save className="h-4 w-4" />
-              Salvar
+              {t("common.save")}
             </>
           )}
         </button>
@@ -128,8 +130,8 @@ export default function Settings() {
           <Users className="h-5 w-5 text-secondary" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium">Gerenciar membros</p>
-          <p className="text-xs text-muted-foreground">Adicionar, editar ou remover</p>
+          <p className="text-sm font-medium">{t("settings.manageMembers")}</p>
+          <p className="text-xs text-muted-foreground">{t("settings.manageMembersDesc")}</p>
         </div>
         <ChevronRight className="h-5 w-5 text-muted-foreground" />
       </button>

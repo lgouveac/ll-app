@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { GroupProvider } from "@/hooks/useGroup";
+import { I18nProvider } from "@/hooks/useI18n";
 import App from "./App";
 import "./index.css";
 
@@ -21,9 +22,10 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
-          <GroupProvider>
-            <App />
+        <I18nProvider>
+          <AuthProvider>
+            <GroupProvider>
+              <App />
             <Toaster
               position="top-center"
               toastOptions={{
@@ -34,8 +36,9 @@ createRoot(document.getElementById("root")!).render(
                 },
               }}
             />
-          </GroupProvider>
-        </AuthProvider>
+            </GroupProvider>
+          </AuthProvider>
+        </I18nProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>

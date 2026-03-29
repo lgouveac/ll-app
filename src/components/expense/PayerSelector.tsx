@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { Member } from "@/types/group";
 import MemberAvatar from "@/components/members/MemberAvatar";
+import { t } from "@/i18n";
 
 interface PayerSelectorProps {
   members: Member[];
@@ -16,7 +17,7 @@ export default function PayerSelector({
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-muted-foreground">
-        Quem pagou?
+        {t("expense.whoPaid")}
       </label>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
         {members.map((member) => {

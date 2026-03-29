@@ -1,4 +1,5 @@
 import { cn, formatCurrency } from "@/lib/utils";
+import { t } from "@/i18n";
 
 interface BudgetBarProps {
   spent: number;
@@ -15,7 +16,7 @@ export default function BudgetBar({ spent, budget, currency, className }: Budget
   return (
     <div className={cn("rounded-xl border border-border bg-card p-4", className)}>
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-muted-foreground">Limite do grupo</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">{t("budget.title")}</h3>
         <span className={cn(
           "text-xs font-semibold px-2 py-0.5 rounded-full",
           isOver ? "bg-destructive/20 text-destructive" : percentage > 80 ? "bg-warning/20 text-warning" : "bg-success/20 text-success"
@@ -38,19 +39,19 @@ export default function BudgetBar({ spent, budget, currency, className }: Budget
       {/* Labels */}
       <div className="flex items-center justify-between mt-2">
         <span className="text-xs text-muted-foreground">
-          Gasto: <span className="font-medium text-foreground">{formatCurrency(spent, currency)}</span>
+          {t("budget.spent")} <span className="font-medium text-foreground">{formatCurrency(spent, currency)}</span>
         </span>
         <span className="text-xs text-muted-foreground">
           {isOver ? (
-            <>Excedido: <span className="font-medium text-destructive">{formatCurrency(spent - budget, currency)}</span></>
+            <>{t("budget.exceeded")} <span className="font-medium text-destructive">{formatCurrency(spent - budget, currency)}</span></>
           ) : (
-            <>Restante: <span className="font-medium text-foreground">{formatCurrency(remaining, currency)}</span></>
+            <>{t("budget.remaining")} <span className="font-medium text-foreground">{formatCurrency(remaining, currency)}</span></>
           )}
         </span>
       </div>
 
       <p className="text-[10px] text-muted-foreground mt-1 text-center">
-        Limite: {formatCurrency(budget, currency)}
+        {t("budget.limit")} {formatCurrency(budget, currency)}
       </p>
     </div>
   );

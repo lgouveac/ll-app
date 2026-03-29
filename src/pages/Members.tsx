@@ -31,10 +31,12 @@ import {
 import { sendInvitation } from "@/services/invitationService";
 import MemberAvatar from "@/components/members/MemberAvatar";
 import EmptyState from "@/components/shared/EmptyState";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function Members() {
   const { group, members } = useGroup();
   const { user } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -78,8 +80,8 @@ export default function Members() {
     onSuccess: (_data, variables) => {
       toast.success(
         variables.email
-          ? "Membro adicionado e convite enviado!"
-          : "Membro adicionado!"
+          ? t("members.addedAndInvited")
+          : t("members.added")
       );
       setNewName("");
       setNewEmail("");
@@ -92,7 +94,7 @@ export default function Members() {
   const updateMutation = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) => updateMember(id, { name }),
     onSuccess: () => {
-      toast.success("Membro atualizado!");
+      toast.success(t("members.updated"));
       setEditingId(null);
       invalidateAll();
     },
@@ -101,13 +103,13 @@ export default function Members() {
 
   const deactivateMutation = useMutation({
     mutationFn: deactivateMember,
-    onSuccess: () => { toast.success("Membro removido"); invalidateAll(); },
+    onSuccess: () => { toast.success(t("members.deactivated")); invalidateAll(); },
     onError: (error: Error) => toast.error(error.message),
   });
 
   const reactivateMutation = useMutation({
     mutationFn: reactivateMember,
-    onSuccess: () => { toast.success("Membro reativado!"); invalidateAll(); },
+    onSuccess: () => { toast.success(t("members.reactivated")); invalidateAll(); },
     onError: (error: Error) => toast.error(error.message),
   });
 
@@ -115,7 +117,7 @@ export default function Members() {
     mutationFn: ({ memberId, email }: { memberId: string; email: string }) =>
       sendInvitation(group!.id, memberId, email),
     onSuccess: () => {
-      toast.success("Convite enviado!");
+      toast.success(t("members.inviteSent"));
       setInvitingId(null);
       setInviteEmail("");
     },
@@ -153,7 +155,7 @@ export default function Members() {
         <div>
           <h1 className="text-xl font-bold">{group.name}</h1>
           <p className="text-sm text-muted-foreground">
-            {members.length} membro{members.length !== 1 ? "s" : ""}
+            {members.length !== 1 ? t("members.countPlural", { count: members.length }) : t("members.count", { count: members.length })}
           </p>
         </div>
         <div className="flex gap-2">
@@ -162,14 +164,14 @@ export default function Members() {
             className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-card"
           >
             <Inbox className="h-4 w-4" />
-            Convites
+            {t("members.invites")}
           </button>
           <button
             onClick={() => { setAddingNew(true); setNewName(""); setNewEmail(""); }}
             className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-primary to-[#7C3AED] px-3 py-2 text-sm font-medium text-white"
           >
             <Plus className="h-4 w-4" />
-            Adicionar
+            {t("common.add")}
           </button>
         </div>
       </div>
@@ -177,7 +179,7 @@ export default function Members() {
       {/* Add new member — with email for instant invite */}
       {addingNew && (
         <div className="rounded-2xl border border-secondary/30 bg-card p-4 space-y-3">
-          <p className="text-sm font-medium text-muted-foreground">Novo membro</p>
+          <p className="text-sm font-medium text-muted-foreground">{t("members.new")}</p>
           <div className="flex items-center gap-3">
             <MemberAvatar name={newName || "?"} color={getAvatarColor(allMembers.length)} size="md" />
             <input
@@ -185,7 +187,7 @@ export default function Members() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, "add")}
-              placeholder="Nome"
+              placeholder={t("setup.namePlaceholder")}
               className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-secondary"
               autoFocus
             />
@@ -199,7 +201,7 @@ export default function Members() {
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, "add")}
-              placeholder="Email (opcional — envia convite automatico)"
+              placeholder={t("members.emailPlaceholder")}
               className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-secondary"
             />
           </div>
@@ -208,7 +210,7 @@ export default function Members() {
               onClick={() => { setAddingNew(false); setNewName(""); setNewEmail(""); }}
               className="flex-1 rounded-lg border border-border py-2 text-sm text-muted-foreground hover:bg-accent"
             >
-              Cancelar
+              {t("common.cancel")}
             </button>
             <button
               onClick={handleAdd}
@@ -219,7 +221,7 @@ export default function Members() {
               )}
             >
               {addMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {newEmail.trim() ? "Adicionar e convidar" : "Adicionar"}
+              {newEmail.trim() ? t("members.addAndInvite") : t("common.add")}
             </button>
           </div>
         </div>
@@ -227,7 +229,7 @@ export default function Members() {
 
       {/* Active members */}
       {members.length === 0 ? (
-        <EmptyState icon={Users} title="Nenhum membro" description="Adicione membros ao grupo" />
+        <EmptyState icon={Users} title={t("members.empty.title")} description={t("members.empty.description")} />
       ) : (
         <div className="space-y-2">
           {members.map((member) => {
@@ -266,7 +268,7 @@ export default function Members() {
                         {isLinked ? (
                           <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                         ) : (
-                          <p className="text-xs text-warning">Sem conta vinculada</p>
+                          <p className="text-xs text-warning">{t("members.noAccount")}</p>
                         )}
                       </div>
 
@@ -274,7 +276,7 @@ export default function Members() {
                       {!isLinked && (
                         <button
                           onClick={() => { setInvitingId(invitingId === member.id ? null : member.id); setInviteEmail(""); }}
-                          title="Convidar por email"
+                          title={t("members.inviteByEmail")}
                           className={cn(
                             "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
                             invitingId === member.id ? "bg-secondary/20 text-secondary" : "text-muted-foreground hover:bg-accent"
@@ -299,7 +301,7 @@ export default function Members() {
                 {invitingId === member.id && (
                   <div className="border-t border-border px-4 py-3">
                     <p className="mb-2 text-xs text-muted-foreground">
-                      Enviar convite para <strong>{member.name}</strong>:
+                      {t("members.sendInviteTo", { name: member.name })}
                     </p>
                     <div className="flex gap-2">
                       <input
@@ -307,7 +309,7 @@ export default function Members() {
                         value={inviteEmail}
                         onChange={(e) => setInviteEmail(e.target.value)}
                         onKeyDown={(e) => handleKeyDown(e, "invite")}
-                        placeholder="email@exemplo.com"
+                        placeholder={t("members.emailExample")}
                         className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-secondary"
                         autoFocus
                       />
@@ -317,7 +319,7 @@ export default function Members() {
                         className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-secondary px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
                       >
                         {inviteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        Convidar
+                        {t("members.invite")}
                       </button>
                     </div>
                   </div>
@@ -336,7 +338,7 @@ export default function Members() {
             className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             {showInactive ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            Removidos ({inactiveMembers.length})
+            {t("members.removed", { count: inactiveMembers.length })}
           </button>
           {showInactive && (
             <div className="space-y-2">
@@ -349,7 +351,7 @@ export default function Members() {
                     className="flex items-center gap-1 rounded-lg bg-secondary/20 px-3 py-1.5 text-xs font-medium text-secondary hover:bg-secondary/30"
                   >
                     <UserPlus className="h-3.5 w-3.5" />
-                    Reativar
+                    {t("members.reactivate")}
                   </button>
                 </div>
               ))}
