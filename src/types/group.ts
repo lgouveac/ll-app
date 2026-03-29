@@ -4,6 +4,7 @@ export interface Group {
   name: string;
   default_currency: string;
   budget: number | null;
+  group_type: string | null;
   created_at: string;
 }
 

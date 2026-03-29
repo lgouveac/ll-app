@@ -28,6 +28,7 @@ export default function Setup() {
   const [groupName, setGroupName] = useState("");
   const [myName, setMyName] = useState(user?.email?.split("@")[0] || "");
   const [currency, setCurrency] = useState("BRL");
+  const [groupType, setGroupType] = useState("");
   const [members, setMembers] = useState<PendingMember[]>([]);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberEmail, setNewMemberEmail] = useState("");
@@ -88,7 +89,7 @@ export default function Setup() {
 
       console.log("[Setup] User ID:", freshUser.id, "Email:", freshUser.email);
 
-      const group = await createGroup(groupName.trim(), currency);
+      const group = await createGroup(groupName.trim(), currency, groupType.trim() || undefined);
       console.log("[Setup] Group created:", group.id);
 
       // Add myself first (linked to my user account)
@@ -181,6 +182,22 @@ export default function Setup() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+              <label className="mb-2 block text-sm font-medium text-white/70">
+                Descreva o grupo (opcional)
+              </label>
+              <input
+                type="text"
+                value={groupType}
+                onChange={(e) => setGroupType(e.target.value)}
+                placeholder="Ex: Viagem Costa Rica, Apartamento SP, Casal..."
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 outline-none transition-colors focus:border-[#DC2626]/50"
+              />
+              <p className="mt-1.5 text-xs text-white/30">
+                A IA vai buscar dicas de economia baseado nessa descricao
+              </p>
             </div>
 
             <button

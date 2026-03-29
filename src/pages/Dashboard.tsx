@@ -9,6 +9,7 @@ import BalanceCard from "@/components/dashboard/BalanceCard";
 import BudgetBar from "@/components/dashboard/BudgetBar";
 import RecentExpenses from "@/components/dashboard/RecentExpenses";
 import QuickAddButton from "@/components/dashboard/QuickAddButton";
+import TipsCard from "@/components/dashboard/TipsCard";
 import { getExpenses } from "@/services/expenseService";
 
 function SkeletonCard({ className }: { className?: string }) {
@@ -95,6 +96,16 @@ export default function Dashboard() {
         <BudgetBar
           spent={totalSpent}
           budget={group.budget}
+          currency={group.default_currency}
+          className="mb-6"
+        />
+      )}
+
+      {/* Tips */}
+      {!isLoading && group && (
+        <TipsCard
+          groupId={group.id}
+          groupType={group.group_type}
           currency={group.default_currency}
           className="mb-6"
         />

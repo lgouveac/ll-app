@@ -41,13 +41,16 @@ export async function getGroup(id: string): Promise<Group | null> {
   return data;
 }
 
-export async function createGroup(name: string, defaultCurrency: string): Promise<Group> {
+export async function createGroup(name: string, defaultCurrency: string, groupType?: string): Promise<Group> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
+  const row: Record<string, unknown> = { name, default_currency: defaultCurrency, user_id: user.id };
+  if (groupType) row.group_type = groupType;
+
   const { data, error } = await supabase
     .from("groups")
-    .insert({ name, default_currency: defaultCurrency, user_id: user.id })
+    .insert(row)
     .select()
     .single();
 
@@ -55,7 +58,7 @@ export async function createGroup(name: string, defaultCurrency: string): Promis
   return data;
 }
 
-export async function updateGroup(id: string, updates: Partial<Pick<Group, "name" | "default_currency" | "budget">>): Promise<Group> {
+export async function updateGroup(id: string, updates: Partial<Pick<Group, "name" | "default_currency" | "budget" | "group_type">>): Promise<Group> {
   const { data, error } = await supabase
     .from("groups")
     .update(updates)
