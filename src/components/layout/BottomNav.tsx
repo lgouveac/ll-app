@@ -14,7 +14,7 @@ export function BottomNav() {
 
   const navItems = inGroup && group
     ? [
-        { to: `/group/${group.id}`, icon: Home, label: t("nav.group"), isCenter: false },
+        { to: "/", icon: Home, label: t("nav.home"), isCenter: false },
         { to: "/members", icon: Users, label: t("nav.members"), isCenter: false },
         { to: "/add", icon: PlusCircle, label: t("nav.add"), isCenter: true },
         { to: "/expenses", icon: Receipt, label: t("nav.history"), isCenter: false },
