@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, PlusCircle, Receipt, Settings2, Users, User } from "lucide-react";
+import { Home, PlusCircle, Receipt, Settings2, Users, User, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGroup } from "@/hooks/useGroup";
 import { useI18n } from "@/hooks/useI18n";
@@ -10,14 +10,14 @@ export function BottomNav() {
   const { t } = useI18n();
 
   // If inside a group context, show group-specific nav
-  const inGroup = pathname.startsWith("/group/") || pathname.startsWith("/add") || pathname.startsWith("/edit/") || pathname.startsWith("/expenses") || pathname.startsWith("/members") || pathname.startsWith("/settings");
+  const inGroup = pathname.startsWith("/group/") || pathname.startsWith("/add") || pathname.startsWith("/edit/") || pathname.startsWith("/expenses") || pathname.startsWith("/members") || pathname.startsWith("/settings") || pathname.startsWith("/tips");
 
   const navItems = inGroup && group
     ? [
-        { to: "/", icon: Home, label: t("nav.home"), isCenter: false },
-        { to: "/members", icon: Users, label: t("nav.members"), isCenter: false },
+        { to: `/group/${group.id}`, icon: Home, label: t("nav.group"), isCenter: false },
         { to: "/add", icon: PlusCircle, label: t("nav.add"), isCenter: true },
         { to: "/expenses", icon: Receipt, label: t("nav.history"), isCenter: false },
+        { to: "/tips", icon: Lightbulb, label: "Dicas", isCenter: false },
         { to: "/settings", icon: Settings2, label: t("nav.config"), isCenter: false },
       ]
     : [

@@ -9,7 +9,6 @@ import BalanceCard from "@/components/dashboard/BalanceCard";
 import BudgetBar from "@/components/dashboard/BudgetBar";
 import RecentExpenses from "@/components/dashboard/RecentExpenses";
 import QuickAddButton from "@/components/dashboard/QuickAddButton";
-import TipsCard from "@/components/dashboard/TipsCard";
 import { getExpenses } from "@/services/expenseService";
 
 function SkeletonCard({ className }: { className?: string }) {
@@ -101,16 +100,6 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Tips */}
-      {!isLoading && group && (
-        <TipsCard
-          groupId={group.id}
-          groupType={group.group_type}
-          currency={group.default_currency}
-          expenses={allExpenses}
-          className="mb-6"
-        />
-      )}
 
       {/* Recent Expenses */}
       {isLoading ? (
