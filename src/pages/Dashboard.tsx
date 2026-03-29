@@ -107,6 +107,7 @@ export default function Dashboard() {
           groupId={group.id}
           groupType={group.group_type}
           currency={group.default_currency}
+          expenses={allExpenses}
           className="mb-6"
         />
       )}

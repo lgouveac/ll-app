@@ -28,12 +28,13 @@ export async function fetchAndCacheTips(
   groupId: string,
   groupType: string,
   currency: string,
-  locale: string
+  locale: string,
+  expenses?: Array<{ amount: number; converted_amount?: number | null; category?: string | null }>
 ): Promise<Tip[]> {
   const res = await fetch("/api/get-tips", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ groupType, currency, locale }),
+    body: JSON.stringify({ groupType, currency, locale, expenses: expenses || [] }),
   });
 
   if (!res.ok) {

@@ -3,11 +3,13 @@ import { Lightbulb, Tag, Percent, ExternalLink, RefreshCw, Loader2 } from "lucid
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { getCachedTips, fetchAndCacheTips, type Tip } from "@/services/tipsService";
+import type { Expense } from "@/types/expense";
 
 interface TipsCardProps {
   groupId: string;
   groupType: string | null;
   currency: string;
+  expenses?: Expense[];
   className?: string;
 }
 
@@ -23,7 +25,7 @@ const typeColors = {
   cashback: "text-secondary bg-secondary/10",
 };
 
-export default function TipsCard({ groupId, groupType, currency, className }: TipsCardProps) {
+export default function TipsCard({ groupId, groupType, currency, expenses: allExpenses, className }: TipsCardProps) {
   const { locale } = useI18n();
   const [tips, setTips] = useState<Tip[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,7 +44,12 @@ export default function TipsCard({ groupId, groupType, currency, className }: Ti
         }
         // Auto-fetch on first load
         setLoading(true);
-        const fresh = await fetchAndCacheTips(groupId, groupType!, currency, locale);
+        const expenseData = (allExpenses || []).map((e) => ({
+          amount: e.amount,
+          converted_amount: e.converted_amount,
+          category: e.category,
+        }));
+        const fresh = await fetchAndCacheTips(groupId, groupType!, currency, locale, expenseData);
         setTips(fresh);
         setLoaded(true);
       } catch (err) {
@@ -60,7 +67,12 @@ export default function TipsCard({ groupId, groupType, currency, className }: Ti
     if (!groupType || loading) return;
     setLoading(true);
     try {
-      const fresh = await fetchAndCacheTips(groupId, groupType, currency, locale);
+      const expenseData = (allExpenses || []).map((e) => ({
+        amount: e.amount,
+        converted_amount: e.converted_amount,
+        category: e.category,
+      }));
+      const fresh = await fetchAndCacheTips(groupId, groupType, currency, locale, expenseData);
       setTips(fresh);
     } catch (err) {
       console.error("Tips refresh error:", err);
