@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { useGroup } from "@/hooks/useGroup";
+import { useI18n } from "@/hooks/useI18n";
 import { getRecentExpenses } from "@/services/expenseService";
 import BalanceCard from "@/components/dashboard/BalanceCard";
 import BudgetBar from "@/components/dashboard/BudgetBar";
@@ -24,7 +26,10 @@ function SkeletonCard({ className }: { className?: string }) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { id: groupIdParam } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { group, members, loading: groupLoading, setActiveGroup } = useGroup();
+  const { t } = useI18n();
+  const userName = user?.email?.split("@")[0] || "";
 
   // Sync URL param with active group
   useEffect(() => {
@@ -65,9 +70,9 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground">Bem-vindo de volta</p>
+            <p className="text-sm text-muted-foreground">{group?.name}</p>
             <h1 className="text-2xl font-bold text-foreground">
-              Ola, {group?.name}
+              {t("home.greeting", { name: userName })}
             </h1>
           </>
         )}
