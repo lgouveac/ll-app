@@ -146,9 +146,12 @@ export default {
   "split.excess": "Excedente de {amount}",
 
   // Balance
-  "balance.title": "Saldo del grupo",
+  "balance.title": "Tu saldo",
   "balance.settled": "Todo saldado!",
   "balance.settledDesc": "Sin deudas pendientes",
+  "balance.youOwe": "Debes",
+  "balance.youAreOwed": "Te deben",
+  "balance.toGroup": "en total al grupo",
 
   // Budget
   "budget.title": "Limite del grupo",

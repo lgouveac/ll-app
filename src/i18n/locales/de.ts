@@ -146,9 +146,12 @@ export default {
   "split.excess": "Uberschuss von {amount}",
 
   // Balance
-  "balance.title": "Gruppensaldo",
+  "balance.title": "Dein Saldo",
   "balance.settled": "Alles ausgeglichen!",
   "balance.settledDesc": "Keine offenen Schulden",
+  "balance.youOwe": "Du schuldest",
+  "balance.youAreOwed": "Dir wird geschuldet",
+  "balance.toGroup": "insgesamt an die Gruppe",
 
   // Budget
   "budget.title": "Gruppenlimit",

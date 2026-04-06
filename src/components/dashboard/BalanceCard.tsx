@@ -1,8 +1,7 @@
-import { Heart, ArrowRight } from "lucide-react";
+import { Heart } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { t } from "@/i18n";
-import { calculateBalances, simplifyDebts } from "@/services/expenseService";
-import MemberAvatar from "@/components/members/MemberAvatar";
+import { calculateBalances } from "@/services/expenseService";
 import type { Expense } from "@/types/expense";
 import type { Member } from "@/types/group";
 
@@ -10,6 +9,7 @@ interface BalanceCardProps {
   expenses: Expense[];
   members: Member[];
   currency: string;
+  userId?: string;
   className?: string;
 }
 
@@ -17,14 +17,18 @@ export default function BalanceCard({
   expenses,
   members,
   currency,
+  userId,
   className,
 }: BalanceCardProps) {
   const balances = calculateBalances(expenses);
-  const debts = simplifyDebts(balances);
 
-  const memberMap = new Map(members.map((m) => [m.id, m]));
+  // Find the logged-in user's member
+  const currentMember = members.find((m) => m.user_id === userId);
+  const userBalance = currentMember ? (balances[currentMember.id] ?? 0) : 0;
+  const roundedBalance = Math.round(userBalance * 100) / 100;
 
-  const isSettled = debts.length === 0;
+  const isSettled = Math.abs(roundedBalance) < 0.01;
+  const owes = roundedBalance < 0;
 
   return (
     <div
@@ -49,47 +53,17 @@ export default function BalanceCard({
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {debts.map((debt) => {
-            const fromMember = memberMap.get(debt.from);
-            const toMember = memberMap.get(debt.to);
-
-            if (!fromMember || !toMember) return null;
-
-            return (
-              <li
-                key={`${debt.from}-${debt.to}`}
-                className="flex items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 backdrop-blur-sm"
-              >
-                <MemberAvatar
-                  name={fromMember.name}
-                  color={fromMember.avatar_color}
-                  size="sm"
-                />
-
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <span className="truncate text-sm font-medium text-white">
-                    {fromMember.name}
-                  </span>
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/50" />
-                  <span className="truncate text-sm font-medium text-white">
-                    {toMember.name}
-                  </span>
-                </div>
-
-                <MemberAvatar
-                  name={toMember.name}
-                  color={toMember.avatar_color}
-                  size="sm"
-                />
-
-                <span className="shrink-0 text-sm font-bold text-white">
-                  {formatCurrency(debt.amount, currency)}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="flex flex-col items-center gap-1 py-4">
+          <p className="text-sm font-medium text-white/70">
+            {owes ? t("balance.youOwe") : t("balance.youAreOwed")}
+          </p>
+          <p className="text-3xl font-bold text-white">
+            {formatCurrency(Math.abs(roundedBalance), currency)}
+          </p>
+          <p className="text-sm text-white/60">
+            {t("balance.toGroup")}
+          </p>
+        </div>
       )}
     </div>
   );
