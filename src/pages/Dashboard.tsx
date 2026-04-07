@@ -83,7 +83,7 @@ export default function Dashboard() {
         <SkeletonCard className="mb-6 h-36" />
       ) : (
         <BalanceCard
-          expenses={expenses}
+          expenses={allExpenses}
           members={members}
           currency={group?.default_currency ?? "USD"}
           userId={user?.id}
