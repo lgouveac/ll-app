@@ -17,14 +17,16 @@ async function fetchRateForDate(
 
   if (cached) return Number(cached.rate);
 
-  // Fetch via Supabase Edge Function (avoids CORS issues with frankfurter.app)
-  const { data: fnData, error: fnError } = await supabase.functions.invoke(
-    "exchange-rate",
-    { body: { from, to, date } }
-  );
+  // Fetch via Vercel API route (same-origin, no CORS issues)
+  const response = await fetch("/api/exchange-rate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to, date }),
+  });
 
-  if (fnError) throw new Error(`Failed to fetch rate for ${from} -> ${to}`);
+  if (!response.ok) throw new Error(`Failed to fetch rate for ${from} -> ${to}`);
 
+  const fnData = await response.json();
   const rate = fnData?.rate;
   if (!rate) throw new Error(`Rate not found for ${from} -> ${to} on ${date}`);
 
