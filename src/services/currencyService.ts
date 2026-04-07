@@ -1,15 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-interface FrankfurterResponse {
-  amount: number;
-  base: string;
-  date: string;
-  rates: Record<string, number>;
-}
 
-/**
- * Fetch exchange rate for a specific date using frankfurter.app (supports historical rates)
- */
 async function fetchRateForDate(
   from: string,
   to: string,
@@ -26,26 +17,15 @@ async function fetchRateForDate(
 
   if (cached) return Number(cached.rate);
 
-  // Fetch from frankfurter.app (supports historical dates)
-  const response = await fetch(
-    `https://api.frankfurter.app/${date}?from=${from}&to=${to}`
+  // Fetch via Supabase Edge Function (avoids CORS issues with frankfurter.app)
+  const { data: fnData, error: fnError } = await supabase.functions.invoke(
+    "exchange-rate",
+    { body: { from, to, date } }
   );
 
-  if (!response.ok) {
-    // Fallback: try today's rate
-    const fallback = await fetch(
-      `https://api.frankfurter.app/latest?from=${from}&to=${to}`
-    );
-    if (!fallback.ok) throw new Error(`Failed to fetch rate for ${from} -> ${to}`);
-    const fallbackJson: FrankfurterResponse = await fallback.json();
-    const fallbackRate = fallbackJson.rates[to];
-    if (!fallbackRate) throw new Error(`Rate not found for ${from} -> ${to}`);
-    return fallbackRate;
-  }
+  if (fnError) throw new Error(`Failed to fetch rate for ${from} -> ${to}`);
 
-  const json: FrankfurterResponse = await response.json();
-  const rate = json.rates[to];
-
+  const rate = fnData?.rate;
   if (!rate) throw new Error(`Rate not found for ${from} -> ${to} on ${date}`);
 
   // Cache in Supabase
