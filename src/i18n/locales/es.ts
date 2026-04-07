@@ -26,6 +26,7 @@ export default {
   "common.member": "miembro",
   "common.members": "miembros",
   "common.saving": "Guardando...",
+  "common.deleting": "Eliminando...",
 
   // Nav
   "nav.home": "Inicio",
@@ -135,6 +136,13 @@ export default {
   "history.empty.description": "Los gastos del grupo apareceran aqui.",
   "history.recent": "Gastos recientes",
   "history.viewAll": "Ver todos",
+  "history.select": "Seleccionar",
+  "history.selected": "{count} seleccionada(s)",
+  "history.selectAll": "Seleccionar todo",
+  "history.deselectAll": "Deseleccionar todo",
+  "history.deleteSelected": "Eliminar {count} gasto(s)",
+  "history.deleted": "{count} gasto(s) eliminado(s)",
+  "history.deleteError": "Error al eliminar gastos",
 
   // Split
   "split.equal": "Igual",

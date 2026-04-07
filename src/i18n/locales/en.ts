@@ -26,6 +26,7 @@ export default {
   "common.member": "member",
   "common.members": "members",
   "common.saving": "Saving...",
+  "common.deleting": "Deleting...",
 
   // Nav
   "nav.home": "Home",
@@ -135,6 +136,13 @@ export default {
   "history.empty.description": "Group expenses will show up here.",
   "history.recent": "Recent expenses",
   "history.viewAll": "View all",
+  "history.select": "Select",
+  "history.selected": "{count} selected",
+  "history.selectAll": "Select all",
+  "history.deselectAll": "Deselect all",
+  "history.deleteSelected": "Delete {count} expense(s)",
+  "history.deleted": "{count} expense(s) deleted",
+  "history.deleteError": "Failed to delete expenses",
 
   // Split
   "split.equal": "Equal",

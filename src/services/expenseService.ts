@@ -187,6 +187,11 @@ export async function deleteExpense(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function deleteExpenses(ids: string[]): Promise<void> {
+  const { error } = await supabase.from("expenses").delete().in("id", ids);
+  if (error) throw error;
+}
+
 export async function uploadPhoto(
   groupId: string,
   expenseId: string,

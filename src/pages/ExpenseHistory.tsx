@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale/pt-BR";
-import { ArrowLeft, Receipt } from "lucide-react";
+import { ArrowLeft, Receipt, Trash2, X, Check } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { useGroup } from "@/hooks/useGroup";
-import { getExpenses } from "@/services/expenseService";
+import { getExpenses, deleteExpenses } from "@/services/expenseService";
 import type { Expense } from "@/types/expense";
 import ExpenseCard from "@/components/expense/ExpenseCard";
 import ExpenseFilters from "@/components/expense/ExpenseFilters";
@@ -21,9 +23,13 @@ interface Filters {
 
 export default function ExpenseHistory() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { group, members } = useGroup();
   const { t } = useI18n();
   const [filters, setFilters] = useState<Filters>({});
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   const { data: expenses = [], isLoading } = useQuery({
     queryKey: ["expenses", group?.id],
@@ -63,25 +69,99 @@ export default function ExpenseHistory() {
     return Array.from(map.entries());
   }, [filtered]);
 
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === filtered.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filtered.map((e) => e.id)));
+    }
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
+  const handleDelete = async () => {
+    if (selected.size === 0) return;
+    setDeleting(true);
+    try {
+      await deleteExpenses(Array.from(selected));
+      await queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      toast.success(t("history.deleted", { count: selected.size }));
+      exitSelectMode();
+    } catch {
+      toast.error(t("history.deleteError"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background pb-safe">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md">
         <div className="flex items-center gap-3 px-4 pb-2 pt-4">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-muted transition-colors hover:brightness-125"
-          >
-            <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
-          <h1 className="text-lg font-bold text-foreground">{t("history.title")}</h1>
-          <span className="ml-auto rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-            {filtered.length}
-          </span>
+          {selectMode ? (
+            <>
+              <button
+                type="button"
+                onClick={exitSelectMode}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-muted transition-colors hover:brightness-125"
+              >
+                <X className="h-5 w-5 text-foreground" />
+              </button>
+              <span className="text-sm font-semibold text-foreground">
+                {t("history.selected", { count: selected.size })}
+              </span>
+              <button
+                type="button"
+                onClick={toggleAll}
+                className="ml-auto text-xs font-medium text-primary"
+              >
+                {selected.size === filtered.length
+                  ? t("history.deselectAll")
+                  : t("history.selectAll")}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-muted transition-colors hover:brightness-125"
+              >
+                <ArrowLeft className="h-5 w-5 text-foreground" />
+              </button>
+              <h1 className="text-lg font-bold text-foreground">{t("history.title")}</h1>
+              <span className="ml-auto rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                {filtered.length}
+              </span>
+              {filtered.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectMode(true)}
+                  className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {t("history.select")}
+                </button>
+              )}
+            </>
+          )}
         </div>
 
-        <ExpenseFilters onFilter={setFilters} members={members} />
+        {!selectMode && (
+          <ExpenseFilters onFilter={setFilters} members={members} />
+        )}
       </div>
 
       {/* Content */}
@@ -110,11 +190,32 @@ export default function ExpenseHistory() {
                 </h2>
                 <div className="space-y-2">
                   {items.map((expense) => (
-                    <ExpenseCard
-                      key={expense.id}
-                      expense={expense}
-                      onClick={() => navigate(`/expenses/${expense.id}`)}
-                    />
+                    <div key={expense.id} className="flex items-center gap-2">
+                      {selectMode && (
+                        <button
+                          type="button"
+                          onClick={() => toggleSelect(expense.id)}
+                          className={cn(
+                            "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
+                            selected.has(expense.id)
+                              ? "border-primary bg-primary text-white"
+                              : "border-border bg-card",
+                          )}
+                        >
+                          {selected.has(expense.id) && <Check className="h-3 w-3" />}
+                        </button>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <ExpenseCard
+                          expense={expense}
+                          onClick={() =>
+                            selectMode
+                              ? toggleSelect(expense.id)
+                              : navigate(`/expenses/${expense.id}`)
+                          }
+                        />
+                      </div>
+                    </div>
                   ))}
                 </div>
               </section>
@@ -122,6 +223,27 @@ export default function ExpenseHistory() {
           </div>
         )}
       </div>
+
+      {/* Delete FAB */}
+      {selectMode && selected.size > 0 && (
+        <div className="fixed bottom-6 left-0 right-0 z-20 flex justify-center px-4 pb-safe">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className={cn(
+              "flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-lg",
+              "bg-destructive transition-all active:scale-95",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
+            )}
+          >
+            <Trash2 className="h-4 w-4" />
+            {deleting
+              ? t("common.deleting")
+              : t("history.deleteSelected", { count: selected.size })}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

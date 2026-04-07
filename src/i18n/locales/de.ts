@@ -26,6 +26,7 @@ export default {
   "common.member": "Mitglied",
   "common.members": "Mitglieder",
   "common.saving": "Speichern...",
+  "common.deleting": "Loschen...",
 
   // Nav
   "nav.home": "Home",
@@ -135,6 +136,13 @@ export default {
   "history.empty.description": "Die Ausgaben der Gruppe erscheinen hier.",
   "history.recent": "Letzte Ausgaben",
   "history.viewAll": "Alle anzeigen",
+  "history.select": "Auswahlen",
+  "history.selected": "{count} ausgewahlt",
+  "history.selectAll": "Alle auswahlen",
+  "history.deselectAll": "Alle abwahlen",
+  "history.deleteSelected": "{count} Ausgabe(n) loschen",
+  "history.deleted": "{count} Ausgabe(n) geloscht",
+  "history.deleteError": "Fehler beim Loschen",
 
   // Split
   "split.equal": "Gleichmassig",
