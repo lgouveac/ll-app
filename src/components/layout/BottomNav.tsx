@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, PlusCircle, Receipt, Settings2, Users, User, Lightbulb } from "lucide-react";
+import { Home, Receipt, Settings2, Users, User, Lightbulb } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGroup } from "@/hooks/useGroup";
 import { useI18n } from "@/hooks/useI18n";
@@ -15,7 +15,6 @@ export function BottomNav() {
   const navItems = inGroup && group
     ? [
         { to: `/group/${group.id}`, icon: Home, label: t("nav.group"), isCenter: false },
-        { to: "/add", icon: PlusCircle, label: t("nav.add"), isCenter: true },
         { to: "/expenses", icon: Receipt, label: t("nav.history"), isCenter: false },
         { to: "/tips", icon: Lightbulb, label: "Dicas", isCenter: false },
         { to: "/settings", icon: Settings2, label: t("nav.config"), isCenter: false },
