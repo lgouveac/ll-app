@@ -73,6 +73,9 @@ export default function AddExpense() {
   const { group, members } = useGroup();
   const { t } = useI18n();
 
+  // Entry mode toggle (manual vs AI)
+  const [entryMode, setEntryMode] = useState<"manual" | "ai">("manual");
+
   // Split state (managed outside RHF)
   const [splitType, setSplitType] = useState<SplitType>("equal");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
@@ -334,6 +337,41 @@ export default function AddExpense() {
         onSubmit={handleSubmit(onSubmit)}
         className="mx-auto max-w-lg space-y-6 px-4 py-6"
       >
+        {/* Mode toggle (Manual / IA) — hidden in edit mode */}
+        {!isEdit && (
+          <div className="flex gap-2 rounded-xl border border-border bg-card p-1">
+            <button
+              type="button"
+              onClick={() => setEntryMode("manual")}
+              className={cn(
+                "flex-1 rounded-lg py-2 text-sm font-medium transition-colors",
+                entryMode === "manual"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t("expense.modeManual")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEntryMode("ai");
+              }}
+              className={cn(
+                "flex-1 rounded-lg py-2 text-sm font-medium transition-colors",
+                entryMode === "ai"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t("expense.modeAI")}
+            </button>
+          </div>
+        )}
+
+        {/* MANUAL fields (description / amount / currency / date / category) */}
+        {entryMode === "manual" && (
+        <>
         {/* Description */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground">
@@ -451,6 +489,8 @@ export default function AddExpense() {
             })}
           </div>
         </div>
+        </>
+        )}
 
         {/* Payer */}
         <PayerSelector
@@ -476,6 +516,9 @@ export default function AddExpense() {
           onCustomAmountsChange={setCustomAmounts}
         />
 
+        {/* AI block — photo capture + extracted list */}
+        {entryMode === "ai" && !isEdit && (
+        <>
         {/* Photo */}
         <PhotoCapture
           value={files}
@@ -674,8 +717,11 @@ export default function AddExpense() {
             </button>
           </div>
         )}
+        </>
+        )}
 
-        {/* Notes */}
+        {/* Notes (manual only) */}
+        {entryMode === "manual" && (
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground">
             {t("common.notes")}
@@ -691,8 +737,10 @@ export default function AddExpense() {
             )}
           />
         </div>
+        )}
 
-        {/* Submit */}
+        {/* Submit (manual only — AI mode saves via the inner button in extracted list) */}
+        {entryMode === "manual" && (
         <button
           type="submit"
           disabled={mutation.isPending}
@@ -714,6 +762,7 @@ export default function AddExpense() {
             t("expense.addExpense")
           )}
         </button>
+        )}
       </form>
     </div>
   );

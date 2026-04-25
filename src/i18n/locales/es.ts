@@ -129,6 +129,8 @@ export default {
   "expense.saveMultiple": "Guardar {count} gastos por separado",
   "expense.multipleCreated": "{count} gastos creados!",
   "expense.original": "Original: {amount}",
+  "expense.modeManual": "Manual",
+  "expense.modeAI": "IA",
 
   // Expense history
   "history.title": "Historial",

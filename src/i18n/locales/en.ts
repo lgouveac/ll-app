@@ -129,6 +129,8 @@ export default {
   "expense.saveMultiple": "Save {count} separate expenses",
   "expense.multipleCreated": "{count} expenses created!",
   "expense.original": "Original: {amount}",
+  "expense.modeManual": "Manual",
+  "expense.modeAI": "AI",
 
   // Expense history
   "history.title": "History",
