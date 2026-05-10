@@ -38,14 +38,18 @@ export default function PhotoCapture({ value, onChange, onExtracted }: PhotoCapt
     onChange(merged);
     if (inputRef.current) inputRef.current.value = "";
 
-    // Auto-extract from first image if callback provided
-    if (onExtracted && files.length === 0) {
-      const firstImage = newFiles.find(isImage);
-      if (firstImage) {
+    if (onExtracted) {
+      const newImages = newFiles.filter(isImage);
+      if (newImages.length > 0) {
         setExtracting(true);
         try {
-          const data = await extractReceiptData(firstImage);
-          onExtracted(data);
+          const results = await Promise.all(newImages.map(extractReceiptData));
+          const combined: ExtractedReceipt = {
+            currency: results.find((r) => r.currency)?.currency || "USD",
+            date: results.find((r) => r.date)?.date || null,
+            expenses: results.flatMap((r) => r.expenses),
+          };
+          onExtracted(combined);
           toast.success(t("photo.extracted"));
         } catch (err) {
           console.error("Extraction failed:", err);
