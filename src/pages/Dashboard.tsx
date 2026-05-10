@@ -86,6 +86,7 @@ export default function Dashboard() {
           expenses={allExpenses}
           members={members}
           currency={group?.default_currency ?? "USD"}
+          group={group}
           userId={user?.id}
           className="mb-6"
         />
