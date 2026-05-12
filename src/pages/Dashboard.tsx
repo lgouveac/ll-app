@@ -54,8 +54,10 @@ export default function Dashboard() {
     enabled: !!group,
   });
 
-  // Total spent in group currency
-  const totalSpent = allExpenses.reduce((sum, e) => sum + (e.converted_amount ?? e.amount), 0);
+  // Total spent in group currency (excludes balance transfers between groups)
+  const totalSpent = allExpenses
+    .filter((e) => e.category !== "transfer")
+    .reduce((sum, e) => sum + (e.converted_amount ?? e.amount), 0);
 
   const isLoading = groupLoading || expensesLoading;
 
@@ -86,6 +88,7 @@ export default function Dashboard() {
           expenses={allExpenses}
           members={members}
           currency={group?.default_currency ?? "USD"}
+          group={group}
           userId={user?.id}
           className="mb-6"
         />

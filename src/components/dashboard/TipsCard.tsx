@@ -44,11 +44,13 @@ export default function TipsCard({ groupId, groupType, currency, expenses: allEx
         }
         // Auto-fetch on first load
         setLoading(true);
-        const expenseData = (allExpenses || []).map((e) => ({
-          amount: e.amount,
-          converted_amount: e.converted_amount,
-          category: e.category,
-        }));
+        const expenseData = (allExpenses || [])
+          .filter((e) => e.category !== "transfer")
+          .map((e) => ({
+            amount: e.amount,
+            converted_amount: e.converted_amount,
+            category: e.category,
+          }));
         const fresh = await fetchAndCacheTips(groupId, groupType!, currency, locale, expenseData);
         setTips(fresh);
         setLoaded(true);

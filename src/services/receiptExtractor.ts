@@ -20,6 +20,8 @@ export async function extractReceiptData(file: File): Promise<ExtractedReceipt> 
   const base64 = await fileToBase64(file);
   console.log("[Receipt] Extracting from:", file.name, "Size:", (file.size / 1024).toFixed(0) + "KB");
 
+  const todayISO = new Date().toISOString().slice(0, 10);
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -36,7 +38,7 @@ export async function extractReceiptData(file: File): Promise<ExtractedReceipt> 
 Return ONLY valid JSON with this EXACT structure:
 {
   "currency": "USD",
-  "date": "2026-03-25",
+  "date": "YYYY-MM-DD or null",
   "expenses": [
     {
       "description": "Item or expense description",
@@ -56,7 +58,9 @@ CRITICAL RULES:
 - If the receipt shows $ without country context, use USD.
 - expenses: Extract EVERY individual item/expense visible. If there are 10 items, return 10 objects.
 - Each expense must have: description (concise, original language), amount (number, no formatting), category (one of: food, transport, home, entertainment, health, shopping, travel, other)
-- date: ISO format YYYY-MM-DD from the receipt, or null if not visible
+- date: ISO format YYYY-MM-DD from the receipt itself. Return null if no date is clearly visible — do NOT invent a date or copy the placeholder above.
+- Date format on receipts is ambiguous: "04/05/2026" can be 4-May (DD/MM/YYYY, BR/EU) or 5-Apr (MM/DD/YYYY, US). Default to DD/MM/YYYY unless the receipt clearly indicates US format (month name in English, ZIP code, "$" with US address, etc.).
+- The extracted date MUST be on or before today (${todayISO}). If parsing yields a future date, you parsed the format wrong — try the other interpretation, or return null.
 - If the image shows a single total with no itemization, return one expense with that total
 - NEVER return amount as 0 unless truly invisible
 - Look at EVERY number, text and symbol carefully`,
@@ -66,7 +70,7 @@ CRITICAL RULES:
           content: [
             {
               type: "text",
-              text: "Extract ALL expenses from this receipt/image. List every item individually:",
+              text: `Today is ${todayISO}. Extract ALL expenses from this receipt/image. List every item individually:`,
             },
             {
               type: "image_url",
