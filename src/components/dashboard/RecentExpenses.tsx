@@ -1,6 +1,7 @@
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
+  ArrowLeftRight,
   ChevronRight,
   Receipt,
   UtensilsCrossed,
@@ -33,6 +34,7 @@ const categoryIcons: Record<string, LucideIcon> = {
   health: Heart,
   shopping: ShoppingBag,
   travel: Plane,
+  transfer: ArrowLeftRight,
   other: MoreHorizontal,
 };
 
